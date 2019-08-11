@@ -1,6 +1,7 @@
 # react-client
 
-Mirrored from gitlab.com/mschwartz/react-client
+Hosted at gitlab.com/robodomo/react-client
+Mirrored at github.com/RoboDomo/react-client
 
 ## Design Criteria
 
