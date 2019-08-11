@@ -69,7 +69,8 @@ const ThermostatButton = ({ device }) => {
 
   // got these colors by inspecting the react-nest component
   let backgroundColor, color;
-  switch (thermostat.hvacState) {
+  //  console.log(thermostat.hvacState, thermostat);
+  switch (thermostat.hvac_state) {
     case "off":
     default:
       break;
