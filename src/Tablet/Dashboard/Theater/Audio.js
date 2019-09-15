@@ -49,7 +49,23 @@ const Audio = ({ device }) => {
         >
           <FaVolumeUp />
         </RemoteButton>
+        <RemoteButton
+          mini
+          style={{ paddingRight: 10 }}
+          onClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            dispatch({ type: "movie" });
+          }}
+        >
+          DD
+        </RemoteButton>
       </ButtonGroup>
+    </>
+  );
+};
+
+/*
       <ButtonGroup style={{ marginTop: 4 }}>
         <RemoteButton
           onClick={e => {
@@ -70,9 +86,7 @@ const Audio = ({ device }) => {
           Movie
         </RemoteButton>
       </ButtonGroup>
-    </>
-  );
-};
+*/
 
 //
 export default Audio;

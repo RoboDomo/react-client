@@ -1,6 +1,18 @@
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useReducer } from "react";
 
+import {
+  FaPause,
+  FaPlay,
+  FaArrowAltCircleLeft,
+  FaArrowAltCircleRight,
+  FaArrowAltCircleUp,
+  FaArrowAltCircleDown,
+} from "react-icons/fa";
+//FaArrowAltCircleDown
+
+import RemoteButton from "@/common/RemoteButton";
 import useAppleTV from "@/hooks/useAppleTV";
+import appleTVReducer from "@/hooks/reducers/appleTVReducer";
 
 const appName = n => {
   if (n === "com.google.ios.youtube") {
@@ -22,6 +34,7 @@ const formatTime = (seconds, trim = true) => {
 
 const AppleTV = ({ device }) => {
   const atv = useAppleTV(device),
+    [, dispatch] = useReducer(appleTVReducer, { device: device }),
     elapsedTime = atv ? atv.elapsedTime : 0,
     info = atv ? atv.info : null;
 
@@ -47,6 +60,7 @@ const AppleTV = ({ device }) => {
   }
 
   const app = appName(info.appDisplayName || info.appBundleIdentifier);
+
   return (
     <div style={{ height: undefined, textAlign: "center", marginBottom: 4 }}>
       <div style={{ fontSize: 16 }}>{app}</div>
@@ -55,8 +69,39 @@ const AppleTV = ({ device }) => {
         <br />
         <div style={{ fontWeight: "bold" }}>{renderPlaybackState()}</div>
       </div>
+      <div>
+        <RemoteButton dispatch={dispatch} action="pause" mini>
+          <FaPause />
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="select">
+          Select
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="play" mini>
+          <FaPlay />
+        </RemoteButton>
+      </div>
     </div>
   );
+  /*
+        <RemoteButton dispatch={dispatch} action="pause" mini>
+          <FaArrowAltCircleUp />
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="pause" mini>
+          <FaArrowAltCircleDown />
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="pause" mini>
+          <FaPause />
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="play" mini>
+          <FaPlay />
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="pause" mini>
+          <FaArrowAltCircleLeft />
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="pause" mini>
+          <FaArrowAltCircleRight />
+        </RemoteButton>
+  */
 };
 
 //
