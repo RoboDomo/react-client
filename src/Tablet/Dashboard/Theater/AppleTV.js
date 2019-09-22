@@ -38,6 +38,22 @@ const AppleTV = ({ device }) => {
     elapsedTime = atv ? atv.elapsedTime : 0,
     info = atv ? atv.info : null;
 
+  const renderControls = () => {
+    return (
+      <div>
+        <RemoteButton dispatch={dispatch} action="pause" mini>
+          <FaPause />
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="select">
+          Select
+        </RemoteButton>
+        <RemoteButton dispatch={dispatch} action="play" mini>
+          <FaPlay />
+        </RemoteButton>
+      </div>
+    );
+  };
+
   const renderPlaybackState = () => {
     if (!info) {
       return null;
@@ -56,7 +72,12 @@ const AppleTV = ({ device }) => {
   };
 
   if (!info) {
-    return <div>Not Playing</div>;
+    return (
+      <div>
+        <div style={{ textAlign: "center" }}>Not Playing</div>
+        {renderControls()}
+      </div>
+    );
   }
 
   const app = appName(info.appDisplayName || info.appBundleIdentifier);
@@ -69,17 +90,7 @@ const AppleTV = ({ device }) => {
         <br />
         <div style={{ fontWeight: "bold" }}>{renderPlaybackState()}</div>
       </div>
-      <div>
-        <RemoteButton dispatch={dispatch} action="pause" mini>
-          <FaPause />
-        </RemoteButton>
-        <RemoteButton dispatch={dispatch} action="select">
-          Select
-        </RemoteButton>
-        <RemoteButton dispatch={dispatch} action="play" mini>
-          <FaPlay />
-        </RemoteButton>
-      </div>
+      {renderControls()}
     </div>
   );
   /*

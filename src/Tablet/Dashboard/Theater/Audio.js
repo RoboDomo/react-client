@@ -65,28 +65,5 @@ const Audio = ({ device }) => {
   );
 };
 
-/*
-      <ButtonGroup style={{ marginTop: 4 }}>
-        <RemoteButton
-          onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            dispatch({ type: "auto" });
-          }}
-        >
-          Auto
-        </RemoteButton>
-        <RemoteButton
-          onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            dispatch({ type: "movie" });
-          }}
-        >
-          Movie
-        </RemoteButton>
-      </ButtonGroup>
-*/
-
 //
 export default Audio;
