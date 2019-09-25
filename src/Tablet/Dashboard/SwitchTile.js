@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 
-import { useSwitch } from "@/hooks/useSmartThings";
+import { useSwitch as useSmartThingsSwitch } from "@/hooks/useSmartThings";
+import { useSwitch as useHubitatSwitch } from "@/hooks/useHubitat";
 
 import Tile from "./Tile";
 import { TiLightbulb } from "react-icons/ti";
 
-const SwitchTile = ({ name }) => {
-  const thing = useSwitch(name);
+const SwitchTile = ({ hub, name }) => {
+  const thing = hub === "hubitat" ? useHubitatSwitch(name) : useSmartThingsSwitch(name);
+  //  const thing = useSwitch(name);
 
   const onClick = e => {
     e.stopPropagation();
