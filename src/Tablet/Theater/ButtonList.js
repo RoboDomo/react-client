@@ -27,7 +27,11 @@ const ButtonList = ({ theater }) => {
             case "thermostat":
               return (
                 <div key={key++} style={{ textAlign: "center", width: "100%" }}>
-                  <ThermostatButton device={button.device} weather={button.weather} />
+                  <ThermostatButton
+                    hub={button.hub}
+                    device={button.device}
+                    weather={button.weather}
+                  />
                 </div>
               );
             case "macro":
@@ -41,13 +45,13 @@ const ButtonList = ({ theater }) => {
             case "fan":
               return (
                 <div key={key++} style={{ textAlign: "center", width: "100%" }}>
-                  <FanButton name={button.device} />
+                  <FanButton hub={button.hub} name={button.device} />
                 </div>
               );
             case "dimmer":
               return (
                 <div key={key++} style={{ textAlign: "center", width: "100%" }}>
-                  <DimmerButton name={button.device} />
+                  <DimmerButton hub={button.hub} name={button.device} />
                 </div>
               );
             default:
@@ -64,4 +68,6 @@ const ButtonList = ({ theater }) => {
     </div>
   );
 };
+
+//
 export default ButtonList;

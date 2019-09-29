@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { useFan } from "@/hooks/useSmartThings";
+import React from "react";
+import { useFan } from "@/hooks/useThings";
 
 import RemoteButton from "@/common/RemoteButton";
 
-const FanButton = ({ name }) => {
-  const fan = useFan(name);
+const FanButton = ({ hub, name }) => {
+  const fan = useFan(name, hub);
+  //  const fan = useFan(name);
 
   const handleClick = () => {
     let value = 25;

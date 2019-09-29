@@ -108,7 +108,7 @@ const MainScreen = () => {
           <TabPane eventKey={6}>
             <Autelis />
           </TabPane>
-          <TabPane eventKey={7}>SmartThings</TabPane>
+          <TabPane eventKey={7}>Things</TabPane>
         </TabContent>
       </TabContainer>
     </div>

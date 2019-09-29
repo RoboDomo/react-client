@@ -5,13 +5,13 @@ import { Tab, Tabs } from "react-bootstrap";
 import DashboardTab from "./DashboardTab";
 
 const Dashboard = () => {
-  const config = useConfig();
+  const Config = useConfig();
   const [activeTab, setActiveTab] = useState(localStorage.getItem("dashboardTabState") || "1");
   const changeTab = eventKey => {
     localStorage.setItem("dashboardTabState", eventKey);
     setActiveTab(eventKey);
   };
-  if (!config.dashboards) {
+  if (!Config || !Config.dashboards) {
     return null;
   }
   return (
@@ -23,7 +23,7 @@ const Dashboard = () => {
       mountOnEnter
       unmountOnExit
     >
-      {config.dashboards.map(dashboard => {
+      {Config.dashboards.map(dashboard => {
         return (
           <Tab eventKey={dashboard.key} key={dashboard.key} title={dashboard.title}>
             <DashboardTab dashboard={dashboard} />

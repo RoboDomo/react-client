@@ -1,25 +1,14 @@
 import React, { useRef, useEffect } from "react";
 import {
-  useSwitch as useSmartThingsSwitch,
-  useDimmer as useSmartThingsDimmer,
-  useFan as useSmartThingsFan,
-  useMotion as useSmartThingsMotion,
-  usePresence as useSmartThingsPresence,
-  useTemperature as useSmartThingsTemperature,
-  useButton as useSmartThingsButton,
-  useContact as useSmartThingsContact,
-} from "@/hooks/useSmartThings";
-
-import {
-  useSwitch as useHubitatSwitch,
-  useDimmer as useHubitatDimmer,
-  useFan as useHubitatFan,
-  useMotion as useHubitatMotion,
-  usePresence as useHubitatPresence,
-  useTemperature as useHubitatTemperature,
-  useButton as useHubitatButton,
-  useContact as useHubitatContact,
-} from "@/hooks/useHubitat";
+  useSwitch,
+  useDimmer,
+  useFan,
+  useMotion,
+  usePresence,
+  useTemperature,
+  useButton,
+  useContact,
+} from "@/hooks/useThings";
 
 import ToggleField from "@/common/form/ToggleField";
 import DimmerField from "@/common/form/DimmerField";
@@ -46,31 +35,6 @@ const SmartThingsTab = ({ room }) => {
   const toggleDimmer = (name, state) => {
     const thing = things.current.dimmer[name];
     thing.switch = thing.switch === "on" ? "off" : "on";
-  };
-
-  const useDimmer = (name, hub) => {
-    return hub === "hubitat" ? useHubitatDimmer(name) : useSmartThingsDimmer(name);
-  };
-  const useFan = (name, hub) => {
-    return hub === "hubitat" ? useHubitatFan(name) : useSmartThingsFan(name);
-  };
-  const useSwitch = (name, hub) => {
-    return hub === "hubitat" ? useHubitatSwitch(name) : useSmartThingsSwitch(name);
-  };
-  const useMotion = (name, hub) => {
-    return hub === "hubitat" ? useHubitatMotion(name) : useSmartThingsMotion(name);
-  };
-  const usePresence = (name, hub) => {
-    return hub === "hubitat" ? useHubitatPresence(name) : useSmartThingsPresence(name);
-  };
-  const useButton = (name, hub) => {
-    return hub === "hubitat" ? useHubitatButton(name) : useSmartThingsButton(name);
-  };
-  const useContact = (name, hub) => {
-    return hub === "hubitat" ? useHubitatContact(name) : useSmartThingsContact(name);
-  };
-  const useTemperature = (name, hub) => {
-    return hub === "hubitat" ? useHubitatTemperature(name) : useSmartThingsTemperature(name);
   };
 
   useEffect(() => {

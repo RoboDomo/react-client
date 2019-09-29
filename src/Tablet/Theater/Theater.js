@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { IonContent } from "@ionic/react";
 import useConfig from "@/hooks/useConfig";
 
 import { Tab, Tabs } from "react-bootstrap";
 import TheaterTab from "./TheaterTab";
 
 const Theater = () => {
-  const config = useConfig();
+  const Config = useConfig();
   const [activeTab, setActiveTab] = useState(localStorage.getItem("theaterTabState") || "0");
 
-  if (!config) {
+  if (!Config) {
     return null;
   }
   return (
@@ -24,8 +23,8 @@ const Theater = () => {
       mountOnEnter
       unmountOnExit
     >
-      {Array.isArray(config.theaters)
-        ? config.theaters.map(theater => {
+      {Array.isArray(Config.theaters)
+        ? Config.theaters.map(theater => {
             //          console.log("theater", theater);
             return (
               <Tab

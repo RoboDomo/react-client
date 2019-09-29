@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
-import { useDimmer } from "@/hooks/useSmartThings";
+import { useDimmer } from "@/hooks/useThings";
 import RemoteButton from "@/common/RemoteButton";
 
-const DimmerButton = ({ children, name }) => {
-  const dimmer = useDimmer(name);
+const DimmerButton = ({ children, hub, name }) => {
+  const dimmer = useDimmer(name, hub);
 
   const handleClick = () => {
     if (dimmer.switch === "on") {

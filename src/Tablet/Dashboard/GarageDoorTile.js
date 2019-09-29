@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useContact } from "@/hooks/useSmartThings";
+import { useContact } from "@/hooks/useThings";
 
 import Tile from "./Tile";
 
@@ -8,7 +8,7 @@ const GarageDoorTile = ({ config }) => {
     devices = {};
 
   for (const d of devs) {
-    devices[d] = useContact(d);
+    devices[d] = useContact(d, d.source);
   }
 
   const doors = [];

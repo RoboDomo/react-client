@@ -11,6 +11,9 @@ const Weather = () => {
     localStorage.setItem("weatherTabState", eventKey);
     setActiveTab(eventKey);
   };
+  if (!Config) {
+    return null;
+  }
   return (
     <Tabs
       id="weather-tabs"

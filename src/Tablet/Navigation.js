@@ -49,7 +49,7 @@ const Navigation = ({ activeTab }) => (
         <FaSwimmingPool /> Pool/Spa
       </Nav.Link>
       <Nav.Link eventKey={7}>
-        <MdMenu /> SmartThings
+        <MdMenu /> Things
       </Nav.Link>
     </Nav>
   </Navbar>

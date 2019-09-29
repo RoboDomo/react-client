@@ -1,13 +1,12 @@
 import React, { useReducer, useRef, useEffect } from "react";
 
-import { useFan as useSmartThingsFan } from "@/hooks/useSmartThings";
-import { useFan as useHubitatFan } from "@/hooks/useHubitat";
+import { useFan } from "@/hooks/useThings";
 
 import Tile from "./Tile";
 import { GiComputerFan } from "react-icons/gi";
 
 const FanTile = ({ name, hub }) => {
-  const fan = hub === "hubitat" ? useHubitatFan(name) : useSmartThingsFan(name);
+  const fan = useFan(name, hub);
 
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 

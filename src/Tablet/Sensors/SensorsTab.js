@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import useConfig from "@/hooks/useConfig";
+
 import {
   useContact,
   useMotion,
@@ -7,18 +8,13 @@ import {
   useTemperature,
   useIlluminance,
   useHumidity,
-} from "@/hooks/useSmartThings";
+} from "@/hooks/useThings";
 import useThermostat from "@/hooks/useThermostat";
 
 import { Row, Col, Card } from "react-bootstrap";
 
 const SensorsTab = () => {
   const Config = useConfig();
-
-  if (!Config || !Array.isArray(Config.sensors)) {
-    return null;
-  }
-  const metric = Config.metric;
 
   const sensors = useRef({
     contact: {},
@@ -48,27 +44,42 @@ const SensorsTab = () => {
   if (!Config || !Array.isArray(Config.sensors)) {
     return null;
   }
+  const metric = Config.metric;
 
   for (const sensor of Config.sensors) {
     switch (sensor.type) {
       case "contact":
-        sensors.current.contact[sensor.name] = useContact(sensor.device || sensor.name, sensor.key);
+        sensors.current.contact[sensor.name] = useContact(
+          sensor.device || sensor.name,
+          sensor.source,
+          sensor.key
+        );
         break;
       case "motion":
-        sensors.current.motion[sensor.name] = useMotion(sensor.device || sensor.name, sensor.key);
+        sensors.current.motion[sensor.name] = useMotion(
+          sensor.device || sensor.name,
+          sensor.source,
+          sensor.key
+        );
         break;
       case "battery":
-        sensors.current.battery[sensor.name] = useBattery(sensor.device || sensor.name, sensor.key);
+        sensors.current.battery[sensor.name] = useBattery(
+          sensor.device || sensor.name,
+          sensor.source,
+          sensor.key
+        );
         break;
       case "temperature":
         sensors.current.temperature[sensor.name] = useTemperature(
           sensor.device || sensor.name,
+          sensor.source,
           sensor.key
         );
         break;
       case "illuminance":
         sensors.current.illuminance[sensor.name] = useIlluminance(
           sensor.device || sensor.name,
+          sensor.source,
           sensor.key
         );
         break;
@@ -81,6 +92,7 @@ const SensorsTab = () => {
         } else {
           sensors.current.humidity[sensor.name] = useHumidity(
             sensor.device || sensor.name,
+            sensor.source,
             sensor.key
           );
         }

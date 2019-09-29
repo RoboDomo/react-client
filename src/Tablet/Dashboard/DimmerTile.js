@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
-import { useDimmer as useSmartThingsDimmer } from "@/hooks/useSmartThings";
-import { useDimmer as useHubitatDimmer } from "@/hooks/useHubitat";
+import { useDimmer } from "@/hooks/useThings";
 
 import Tile from "./Tile";
 
 import { TiAdjustBrightness } from "react-icons/ti";
 
 const DimmerTile = ({ hub, name }) => {
-  const dimmer = hub === "hubitat" ? useHubitatDimmer(name) : useSmartThingsDimmer(name);
-  //  const dimmer = useSmartThingsDimmer(name, hub);
+  const dimmer = useDimmer(name, hub);
 
   const onClick = e => {
     e.stopPropagation();
