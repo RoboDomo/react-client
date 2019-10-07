@@ -11,28 +11,37 @@ const RGBController = () => {
   if (!Config) {
     return null;
   }
-  const tabs = Array.isArray(Config.rgb) ? Config.rgb : [Config.rgb];
-  return (
-    <Tabs
-      id="rgbcontroller-tabs"
-      onSelect={eventKey => {
-        localStorage.setItem("rgbTabState", eventKey);
-        setActiveTab(eventKey);
-      }}
-      activeKey={activeTab}
-      variant="pills"
-      mountOnEnter
-      unmountOnExit
-    >
-      {tabs.map(rgb => {
-        return (
-          <Tab title={rgb.label} eventKey={rgb.label} key={rgb.label}>
-            <RGBControllerTab config={rgb} />
-          </Tab>
-        );
-      })}
-    </Tabs>
-  );
+  try {
+    const tabs = Array.isArray(Config.rgb) ? Config.rgb : [Config.rgb];
+    return (
+      <Tabs
+        id="rgbcontroller-tabs"
+        onSelect={eventKey => {
+          localStorage.setItem("rgbTabState", eventKey);
+          setActiveTab(eventKey);
+        }}
+        activeKey={activeTab}
+        variant="pills"
+        mountOnEnter
+        unmountOnExit
+      >
+        {tabs.map(rgb => {
+          return (
+            <Tab title={rgb.label} eventKey={rgb.label} key={rgb.label}>
+              <RGBControllerTab config={rgb} />
+            </Tab>
+          );
+        })}
+      </Tabs>
+    );
+  } catch (e) {
+    return (
+      <div style={{ whiteSpace: "pre" }}>
+        Exception: {e.message}
+        {e.stack}
+      </div>
+    );
+  }
 };
 
 //

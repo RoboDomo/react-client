@@ -15,23 +15,32 @@ const Autelis = () => {
     return null;
   }
 
-  return (
-    <Tabs
-      id="autelis-tabs"
-      onSelect={eventKey => {
-        localStorage.setItem(LOCALSTORAGE_KEY, eventKey);
-        setActiveTab(eventKey);
-      }}
-      activeKey={activeTab}
-      variant="pills"
-      mountOnEnter
-      unmountOnExit
-    >
-      <Tab title={Config.autelis.device.toUpperCase()} eventKey="autelis" key="autelis">
-        <AutelisTab />
-      </Tab>
-    </Tabs>
-  );
+  try {
+    return (
+      <Tabs
+        id="autelis-tabs"
+        onSelect={eventKey => {
+          localStorage.setItem(LOCALSTORAGE_KEY, eventKey);
+          setActiveTab(eventKey);
+        }}
+        activeKey={activeTab}
+        variant="pills"
+        mountOnEnter
+        unmountOnExit
+      >
+        <Tab title={Config.autelis.device.toUpperCase()} eventKey="autelis" key="autelis">
+          <AutelisTab />
+        </Tab>
+      </Tabs>
+    );
+  } catch (e) {
+    return (
+      <div style={{ whiteSpace: "pre" }}>
+        Exception: {e.message}
+        {e.stack}
+      </div>
+    );
+  }
 };
 
 export default Autelis;

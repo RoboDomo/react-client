@@ -14,29 +14,38 @@ const Weather = () => {
   if (!Config) {
     return null;
   }
-  return (
-    <Tabs
-      id="weather-tabs"
-      onSelect={changeTab}
-      activeKey={activeTab}
-      variant="pills"
-      mountOnEnter
-      unmountOnExit
-    >
-      {Config.weather.locations.map(location => {
-        return (
-          <Tab
-            title={location.name}
-            eventKey={location.name}
-            key={location.name}
-            style={{ paddingLeft: 10, paddingRight: 10 }}
-          >
-            <WeatherTab location={location} />
-          </Tab>
-        );
-      })}
-    </Tabs>
-  );
+  try {
+    return (
+      <Tabs
+        id="weather-tabs"
+        onSelect={changeTab}
+        activeKey={activeTab}
+        variant="pills"
+        mountOnEnter
+        unmountOnExit
+      >
+        {Config.weather.locations.map(location => {
+          return (
+            <Tab
+              title={location.name}
+              eventKey={location.name}
+              key={location.name}
+              style={{ paddingLeft: 10, paddingRight: 10 }}
+            >
+              <WeatherTab location={location} />
+            </Tab>
+          );
+        })}
+      </Tabs>
+    );
+  } catch (e) {
+    return (
+      <div style={{ whiteSpace: "pre" }}>
+        Exception: {e.message}
+        {e.stack}
+      </div>
+    );
+  }
 };
 
 //

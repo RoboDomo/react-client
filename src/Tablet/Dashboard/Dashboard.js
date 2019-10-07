@@ -14,24 +14,33 @@ const Dashboard = () => {
   if (!Config || !Config.dashboards) {
     return null;
   }
-  return (
-    <Tabs
-      id="dashboard-tabs"
-      onSelect={changeTab}
-      activeKey={activeTab}
-      variant="pills"
-      mountOnEnter
-      unmountOnExit
-    >
-      {Config.dashboards.map(dashboard => {
-        return (
-          <Tab eventKey={dashboard.key} key={dashboard.key} title={dashboard.title}>
-            <DashboardTab dashboard={dashboard} />
-          </Tab>
-        );
-      })}
-    </Tabs>
-  );
+  try {
+    return (
+      <Tabs
+        id="dashboard-tabs"
+        onSelect={changeTab}
+        activeKey={activeTab}
+        variant="pills"
+        mountOnEnter
+        unmountOnExit
+      >
+        {Config.dashboards.map(dashboard => {
+          return (
+            <Tab eventKey={dashboard.key} key={dashboard.key} title={dashboard.title}>
+              <DashboardTab dashboard={dashboard} />
+            </Tab>
+          );
+        })}
+      </Tabs>
+    );
+  } catch (e) {
+    return (
+      <div style={{ whiteSpace: "pre" }}>
+        Exception: {e.message}
+        {e.stack}
+      </div>
+    );
+  }
 };
 
 //
