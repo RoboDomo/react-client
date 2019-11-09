@@ -14,6 +14,9 @@ const tabInfo = {
   6: "autelis",
   smartthings: 7,
   7: "smartthings",
+  RGB: 8,
+  8: "RGB",
 };
 
+//
 export default tabInfo;

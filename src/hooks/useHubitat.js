@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import MQTT from "@/lib/MQTT";
 
 import Temperature from "@/common/Temperature";
+import tinycolor from "tinycolor2";
 
 /*****************************************************************************************************
  *****************************************************************************************************
@@ -301,6 +302,182 @@ const useIlluminance = (device, key = "illuminance") => {
   return { type: "illuminance", name: device, illuminance: illuminance, formatted: illuminance };
 };
 
+/*****************************************************************************************************
+ *****************************************************************************************************
+ *****************************************************************************************************/
+
+const useRGB = (device, lvl = 99, color = "ff00ff") => {
+  const defaultColor = tinycolor(color),
+    colorRGB = defaultColor.toRgb(),
+    colorHsl = defaultColor.toHsl();
+
+  const [level, setLevel] = useState(lvl);
+  const [sw, setSwitch] = useState(false);
+  const [hex, setHex] = useState(defaultColor.toHex());
+  const [red, setRed] = useState(colorRGB.r);
+  const [green, setGreen] = useState(colorRGB.g);
+  const [blue, setBlue] = useState(colorRGB.b);
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const keys = ["level", "switch", "hue", "red", "green", "blue", "saturation"];
+    const status_topic = `hubitat/${device}/status/`;
+
+    const handleRGB = (topic, message) => {
+      const key = topic.substr(status_topic.length);
+      switch (key) {
+        case "level":
+          setLevel(message);
+          forceUpdate(v => !v);
+          break;
+        case "switch":
+          setSwitch(message);
+          forceUpdate(v => !v);
+          break;
+        case "hue":
+          forceUpdate(v => !v);
+          break;
+        case "saturation":
+          forceUpdate(v => !v);
+          break;
+        case "red":
+          setRed(message);
+          forceUpdate(v => !v);
+          break;
+        case "green":
+          setGreen(message);
+          forceUpdate(v => !v);
+          break;
+        case "blue":
+          setBlue(message);
+          forceUpdate(v => !v);
+          break;
+        default:
+          console.warn("handleRGB: Unhandled key", key);
+          break;
+      }
+    };
+
+    for (const key of keys) {
+      MQTT.subscribe(`${status_topic}${key}`, handleRGB);
+    }
+    return () => {
+      for (const key of keys) {
+        MQTT.unsubscribe(`${status_topic}${key}`, handleRGB);
+      }
+    };
+  }, []); // eslint-disable-line
+  //  }, [device, hsl.h, hsl.v, hsv.h, hsv.v, rgb.blue, rgb.green, rgb.red]);
+
+  const ret = {
+    type: "rgb",
+    name: device,
+    formatted: hex,
+
+    get power() {
+      return sw;
+    },
+    set power(val) {
+      setSwitch(val);
+      MQTT.publish(`hubitat/${device}/set/switch`, val);
+    },
+    get switch() {
+      return sw;
+    },
+    set switch(val) {
+      setSwitch(val);
+      MQTT.publish(`hubitat/${device}/set/switch`, val);
+    },
+
+    get hex() {
+      return hex;
+    },
+    set hex(val) {
+      const st = tinycolor(val);
+      setHex(val);
+      this.rgb = st.toRgb();
+    },
+
+    get level() {
+      return level;
+    },
+    set level(val) {
+      MQTT.publish(`hubitat/${device}/set/level`, val);
+      setLevel(val);
+    },
+
+    get rgb() {
+      return { r: red, g: green, b: blue };
+    },
+    set rgb(val) {
+      setRed((this.red = val.r));
+      setGreen((this.green = val.g));
+      setBlue((this.blue = val.b));
+//      MQTT.publish(`hubitat/${device}/set/level`, level);
+      MQTT.publish(`hubitat/${device}/set/red`, val.r);
+      MQTT.publish(`hubitat/${device}/set/green`, val.g);
+      MQTT.publish(`hubitat/${device}/set/blue`, val.b);
+      const st = tinycolor(val);
+    },
+
+    get hue() {
+      const st = tinycolor(this.rgb).toHsv();
+      return st.h;
+    },
+    set hue(val) {
+      //      setHue(val);
+    },
+
+    get saturation() {
+      const st = tinycolor(this.rgb).toHsv();
+      return st.s;
+      //      return saturation;
+    },
+    set saturation(val) {
+      //      setSaturation(val);
+    },
+
+    get hsl() {
+      const st = tinycolor(this.rgb).toHsl();
+      return st;
+    },
+    set hsl(val) {
+      const color = `hsl(${val.h},${val.s * 100}, ${val.l * 100})`;
+      const st = tinycolor(color);
+      const rgb = st.toRgb();
+      this.rgb = rgb;
+    },
+
+    get hsv() {
+      return tinycolor(this.rgb).toHsv();
+    },
+    set hsv(val) {
+      const st = tinycolor(val);
+      this.rgb = st.toRgb();
+    },
+
+    get red() {
+      return red;
+    },
+    set red(val) {
+      setRed(val);
+    },
+    get green() {
+      return green;
+    },
+    set green(val) {
+      setGreen(val);
+    },
+    get blue() {
+      return red;
+    },
+    set blue(val) {
+      setBlue(val);
+    },
+  };
+  return ret;
+};
+
 //
 export {
   useSwitch,
@@ -314,4 +491,5 @@ export {
   useBattery,
   useHumidity,
   useIlluminance,
+  useRGB,
 };

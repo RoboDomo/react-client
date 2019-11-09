@@ -18,38 +18,47 @@ const Nest = () => {
     return null;
   }
 
-  return (
-    <Tabs
-      id="nest-tabs"
-      onSelect={eventKey => {
-        localStorage.setItem(LOCALSTORAGE_KEY, eventKey);
-        setActiveTab(eventKey);
-      }}
-      activeKey={activeTab}
-      variant="pills"
-      mountOnEnter
-      unmountOnExit
-    >
-      {Array.isArray(Config.nest.thermostats)
-        ? Config.nest.thermostats.map(thermostat => {
-            return (
-              <Tab title={thermostat.name} eventKey={thermostat.name} key={thermostat.name}>
-                <ThermostatTab thermostat={thermostat} />
-              </Tab>
-            );
-          })
-        : null}
-      {Array.isArray(Config.nest.protects)
-        ? Config.nest.protects.map(protect => {
-            return (
-              <Tab title={protect.name} eventKey={protect.name} key={protect.name}>
-                <ProtectTab sensor={protect} />
-              </Tab>
-            );
-          })
-        : null}
-    </Tabs>
-  );
+  try {
+    return (
+      <Tabs
+        id="nest-tabs"
+        onSelect={eventKey => {
+          localStorage.setItem(LOCALSTORAGE_KEY, eventKey);
+          setActiveTab(eventKey);
+        }}
+        activeKey={activeTab}
+        variant="pills"
+        mountOnEnter
+        unmountOnExit
+      >
+        {Array.isArray(Config.nest.thermostats)
+          ? Config.nest.thermostats.map(thermostat => {
+              return (
+                <Tab title={thermostat.name} eventKey={thermostat.name} key={thermostat.name}>
+                  <ThermostatTab thermostat={thermostat} />
+                </Tab>
+              );
+            })
+          : null}
+        {Array.isArray(Config.nest.protects)
+          ? Config.nest.protects.map(protect => {
+              return (
+                <Tab title={protect.name} eventKey={protect.name} key={protect.name}>
+                  <ProtectTab sensor={protect} />
+                </Tab>
+              );
+            })
+          : null}
+      </Tabs>
+    );
+  } catch (e) {
+    return (
+      <div style={{ whiteSpace: "pre" }}>
+        Exception: {e.message}
+        {e.stack}
+      </div>
+    );
+  }
 };
 
 export default Nest;

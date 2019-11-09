@@ -29,6 +29,8 @@ import Autelis from "Tablet/Autelis/Autelis";
 import { FaSwimmingPool } from "react-icons/fa";
 import SmartThings from "Tablet/SmartThings/SmartThings";
 import { MdMenu } from "react-icons/md";
+import RGBController from "Tablet/RGBController/RGBController";
+import { IoIosColorPalette } from "react-icons/io";
 
 import tabInfo from "./tabs";
 
@@ -83,6 +85,9 @@ const MainScreen = () => {
             <TabPane mountOnEnter unmountOnExit eventKey={7}>
               <SmartThings />
             </TabPane>
+            <TabPane mountOnEnter unmountOnExit eventKey={8}>
+              <RGBController />
+            </TabPane>
           </TabContent>
           <Navbar
             fixed="top"
@@ -124,6 +129,9 @@ const MainScreen = () => {
               <Nav.Link eventKey={5}>
                 <IoIosAnalytics /> Sensors
               </Nav.Link>
+              <Nav.Link eventKey={8}>
+                <IoIosColorPalette /> RGB
+              </Nav.Link>
             </Nav>
           </Navbar>
         </TabContainer>
@@ -132,4 +140,5 @@ const MainScreen = () => {
   );
 };
 
+//
 export default MainScreen;
