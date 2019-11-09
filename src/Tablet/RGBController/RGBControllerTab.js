@@ -16,12 +16,12 @@ const Picker = CustomPicker(({ config, form, power, onChange, onChangeComplete, 
     },
     saturation: {
       width: 512,
-      height: 512,
+      height: 460,
       position: "relative",
       marginBottom: 10,
     },
     input: {
-      height: 48,
+      height: 36,
       width: 150,
       fontSize: 24,
       border: `1px solid ${form.hex}`,
@@ -45,15 +45,15 @@ const Picker = CustomPicker(({ config, form, power, onChange, onChangeComplete, 
   };
 
   const handleChange = (data, e) => {
-//    console.log("handleChange", data);
+    //    console.log("handleChange", data);
     //    if (!data) {
     //      return;
     //    }
 
-        form.changed = true;
-        if (data.level) {
-          form.level = data.level;
-        }
+    form.changed = true;
+    if (data.level) {
+      form.level = data.level;
+    }
     //    if (data.h) {
     //      form.hsv.h = data.h;
     //    }
