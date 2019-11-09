@@ -306,12 +306,12 @@ const useIlluminance = (device, key = "illuminance") => {
  *****************************************************************************************************
  *****************************************************************************************************/
 
-const useRGB = (device, color = "ff00ff") => {
+const useRGB = (device, lvl = 99, color = "ff00ff") => {
   const defaultColor = tinycolor(color),
     colorRGB = defaultColor.toRgb(),
     colorHsl = defaultColor.toHsl();
 
-  const [level, setLevel] = useState(colorHsl.l);
+  const [level, setLevel] = useState(lvl);
   const [sw, setSwitch] = useState(false);
   const [hex, setHex] = useState(defaultColor.toHex());
   const [red, setRed] = useState(colorRGB.r);
@@ -413,10 +413,10 @@ const useRGB = (device, color = "ff00ff") => {
       setRed((this.red = val.r));
       setGreen((this.green = val.g));
       setBlue((this.blue = val.b));
-      MQTT.publish(`hubitat/${device}/set/level`, level);
-      MQTT.publish(`hubitat/${device}/set/red`, red);
-      MQTT.publish(`hubitat/${device}/set/green`, green);
-      MQTT.publish(`hubitat/${device}/set/blue`, blue);
+//      MQTT.publish(`hubitat/${device}/set/level`, level);
+      MQTT.publish(`hubitat/${device}/set/red`, val.r);
+      MQTT.publish(`hubitat/${device}/set/green`, val.g);
+      MQTT.publish(`hubitat/${device}/set/blue`, val.b);
       const st = tinycolor(val);
     },
 
