@@ -4,7 +4,7 @@ import { CustomPicker } from "react-color";
 import { EditableInput, Hue, Saturation } from "react-color/lib/components/common";
 import { Button } from "react-bootstrap";
 import { useRGB } from "@/hooks/useHubitat";
-import ReactBootstrapSlider from "react-bootstrap-slider";
+//import ReactBootstrapSlider from "react-bootstrap-slider";
 
 const Picker = CustomPicker(({ config, form, power, onChange, onChangeComplete, update }) => {
   const styles = {
