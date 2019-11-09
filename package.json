@@ -65,7 +65,6 @@
   ],
   "devDependencies": {
     "electron": "^5.0.2",
-    "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",
     "eslint-plugin-prettier": "^3.1.0",
     "hard-source-webpack-plugin": "^0.13.1",
