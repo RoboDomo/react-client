@@ -29,7 +29,7 @@ const useSwitch = (device, sw = "switch") => {
     },
     set switch(val) {
       //      const value = val; // === "off" || val === false ? "off" : "on";
-      MQTT.publish(`smartthings/${device}/${sw}/set`, val);
+      MQTT.publish(`smartthings/${device}/${sw}`, val);
       setToggle(val);
     },
   };
@@ -65,14 +65,14 @@ const useDimmer = (device, sw = "switch", lvl = "level") => {
       return toggle;
     },
     set switch(value) {
-      MQTT.publish(`smartthings/${device}/${sw}/set`, value);
+      MQTT.publish(`smartthings/${device}/${sw}`, value);
       setToggle(value);
     },
     get level() {
       return level;
     },
     set level(l) {
-      MQTT.publish(`smartthings/${device}/${lvl}/set`, l);
+      MQTT.publish(`smartthings/${device}/${lvl}`, l);
       setLevel(Number(l));
     },
   };
@@ -82,7 +82,7 @@ const useDimmer = (device, sw = "switch", lvl = "level") => {
  *****************************************************************************************************
  *****************************************************************************************************/
 
-const useFan = (device, sw = "switch", lvl = "level") => {
+const useFan = (device, sw = "switch", lvl = "le") => {
   const [toggle, setToggle] = useState(false);
   const [level, setLevel] = useState(0);
 
@@ -108,7 +108,7 @@ const useFan = (device, sw = "switch", lvl = "level") => {
       return toggle;
     },
     set switch(value) {
-      MQTT.publish(`smartthings/${device}/${sw}/set`, value);
+      MQTT.publish(`smartthings/${device}/${sw}`, value);
       setToggle(value);
     },
     get level() {
@@ -117,9 +117,9 @@ const useFan = (device, sw = "switch", lvl = "level") => {
     set level(l) {
       l = Number(l);
       if (l === 0) {
-        MQTT.publish(`smartthings/${device}/${lvl}/set`, "off");
+        MQTT.publish(`smartthings/${device}/${lvl}`, "off");
       }
-      MQTT.publish(`smartthings/${device}/${lvl}/set`, l);
+      MQTT.publish(`smartthings/${device}/${lvl}`, l);
       setLevel(l);
     },
   };
