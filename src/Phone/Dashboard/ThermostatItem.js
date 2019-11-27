@@ -1,51 +1,57 @@
-import React, { useState, useEffect } from "react";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+
+ _____ _                                   _        _   ___ _                  
+|_   _| |__   ___ _ __ _ __ ___   ___  ___| |_ __ _| |_|_ _| |_ ___ _ __ ___   
+  | | | '_ \ / _ \ '__| '_ ` _ \ / _ \/ __| __/ _` | __|| || __/ _ \ '_ ` _ \  
+  | | | | | |  __/ |  | | | | | | (_) \__ \ || (_| | |_ | || ||  __/ | | | | | 
+  |_| |_| |_|\___|_|  |_| |_| |_|\___/|___/\__\__,_|\__|___|\__\___|_| |_| |_| 
+                                                                               
+*/
+
+import React, { useState, useReducer } from "react";
+
 import useConfig from "@/hooks/useConfig";
+import useThermostat from "@/hooks/useThermostat";
+import thermostatReducer from "@/hooks/reducers/thermostatReducer";
+import Locale from "@/lib/Locale";
 import NumberInput from "@/common/form/NumberInput";
+//import Temperature from "@/common/Temperature";
 
 import { ListGroup } from "react-bootstrap";
 
-import MQTT from "@/lib/MQTT";
-
-const topics = ["ambient_temperature_f", "target_temperature_f", "hvac_state"];
-
 const ThermostatItem = ({ device }) => {
   const Config = useConfig();
-  const [ambientTemperature, setAmbientTemperature] = useState("72");
-  const [targetTemperature, setTargetTemperature] = useState("72");
-  const [hvacState, setHVACState] = useState("off");
+  const thermostat = useThermostat(device);
+  const [, dispatch] = useReducer(thermostatReducer, { device: device });
 
-  const status_topic = Config.mqtt.nest + "/" + device + "/status/",
-    set_topic = status_topic.replace("status", "set");
+  if (!thermostat || !thermostat.ambient_temperature_f || !thermostat.target_temperature_f) {
+    return null;
+  }
+  const metric = Config.metric;
+  const ambient_temperature = Number(thermostat.ambient_temperature_f),
+    target_temperature = Number(thermostat.target_temperature_f);
 
-  useEffect(() => {
-    const onStateChange = (topic, newValue) => {
-      if (~topic.indexOf("ambient_temperature_f")) {
-        setAmbientTemperature(newValue);
-      } else if (~topic.indexOf("target_temperature_f")) {
-        setTargetTemperature(newValue);
-      } else if (~topic.indexOf("hvac_state")) {
-        setHVACState(newValue);
-      } else {
-        console.log("invlaid topic/message", topic, newValue);
-      }
-    };
-
-    for (const topic of topics) {
-      MQTT.subscribe(status_topic + topic, onStateChange);
-    }
-    return () => {
-      for (const topic of topics) {
-        MQTT.unsubscribe(status_topic + topic, onStateChange);
-      }
-    };
-  }, [status_topic]);
+  if (thermostat.hvac_state === "off") {
+    return (
+      <ListGroup.Item style={{ fontSize: 36, paddingTop: 20, paddingBottom: 70 }}>
+        <div style={{ float: "left" }}>Ambient: {ambient_temperature}&deg;F</div>
+        <div style={{ float: "right" }}>OFF</div>
+      </ListGroup.Item>
+    );
+  }
 
   let variant;
-  if (hvacState === "cooling") {
+  if (thermostat.hvacState === "cooling") {
     variant = "info";
-  } else if (hvacState === "heating") {
+  } else if (thermostat.hvac_state === "heating") {
     variant = "warning";
   }
+
   return (
     <ListGroup.Item variant={variant}>
       <div style={{ textAlign: "center" }}>{device}</div>
@@ -57,15 +63,15 @@ const ThermostatItem = ({ device }) => {
             whiteSpace: "nowrap",
           }}
         >
-          {ambientTemperature}&deg;F
+          {ambient_temperature}&deg;F
         </div>
         <div style={{ flex: 2 }}>
           <NumberInput
             style={{ float: "left" }}
-            key={targetTemperature}
-            value={targetTemperature}
+            key={target_temperature}
+            value={target_temperature}
             onValueChange={temp => {
-              MQTT.publish(set_topic + "/target_temperature_f", temp);
+              dispatch({ type: "target_temperature", value: Locale.ctof(temp, metric) });
             }}
           />
         </div>

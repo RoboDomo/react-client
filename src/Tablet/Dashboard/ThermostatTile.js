@@ -1,3 +1,17 @@
+/* _____     _     _      _    
+|_   _|_ _| |__ | | ___| |_  
+  | |/ _` | '_ \| |/ _ \ __| 
+  | | (_| | |_) | |  __/ |_  
+  |_|\__,_|_.__/|_|\___|\__| 
+
+ _____ _                                   _        _  _____ _ _       
+|_   _| |__   ___ _ __ _ __ ___   ___  ___| |_ __ _| ||_   _(_) | ___  
+  | | | '_ \ / _ \ '__| '_ ` _ \ / _ \/ __| __/ _` | __|| | | | |/ _ \ 
+  | | | | | |  __/ |  | | | | | | (_) \__ \ || (_| | |_ | | | | |  __/ 
+  |_| |_| |_|\___|_|  |_| |_| |_|\___/|___/\__\__,_|\__||_| |_|_|\___| 
+                                                                       
+*/
+
 import React, { useState, useReducer } from "react";
 
 import useConfig from "@/hooks/useConfig";
@@ -24,6 +38,26 @@ const ThermostatTile = ({ device }) => {
   const ambient = Number(thermostat.ambient_temperature_f),
     target = Number(thermostat.target_temperature_f);
 
+  if (thermostat.hvac_state === "off") {
+    return (
+      <Tile width={2} height={2} onClick="nest">
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: 0,
+          }}
+        >
+          <div style={{ marginBottom: 8, fontSize: 18, fontWeight: "bold" }}>
+            Inside: <Temperature value={thermostat.ambient_temperature_f} />
+          </div>
+          <div>
+            <div>Thermostat</div>
+            <div style={{ marginBottom: 8, fontSize: 48, fontWeight: "bold" }}>{"OFF"}</div>
+          </div>
+        </div>
+      </Tile>
+    );
+  }
   return (
     <Tile width={2} height={2} onClick="nest">
       <div

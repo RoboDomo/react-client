@@ -1,14 +1,6 @@
 import React, { useReducer } from "react";
 
-import {
-  FaPause,
-  FaPlay,
-  FaArrowAltCircleLeft,
-  FaArrowAltCircleRight,
-  FaArrowAltCircleUp,
-  FaArrowAltCircleDown,
-} from "react-icons/fa";
-//FaArrowAltCircleDown
+import { FaPause, FaPlay } from "react-icons/fa";
 
 import RemoteButton from "@/common/RemoteButton";
 import useAppleTV from "@/hooks/useAppleTV";

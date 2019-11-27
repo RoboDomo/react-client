@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import useConfig from "@/hooks/useConfig";
-import MQTT from "@/lib/MQTT";
+import useLGTV from "@/hooks/useLGTV";
+import useDenon from "@/hooks/useDenon";
+import useBravia from "@/hooks/useBravia";
+import useAppleTV from "@/hooks/useAppleTV";
+
 
 import TiVo from "../Dashboard/Theater/TiVo";
 import AppleTV from "../Dashboard/Theater/AppleTV";
@@ -9,118 +13,8 @@ import { ListGroup } from "react-bootstrap";
 
 const TheaterItem = ({ title }) => {
   const Config = useConfig();
-  const [currentActivity, setCurrentActivity] = useState("All Off");
-  const [power, setPower] = useState(false);
-  const [foregroundApp, setForegroundApp] = useState(null);
-  const [avrInput, setAvrInput] = useState("OFF");
-  const [tvInput, setTVInput] = useState("OFF");
 
-  const launchPoints = useRef(null);
-  const lgtv = useRef({});
-  const currentDevice = useRef("None");
-  const appleTV = useRef(null);
-  const tivo = useRef(null);
-  const denon = useRef(null);
-
-  let tvType = "unknown";
-
-  useEffect(() => {
-    const onMessage = (topic, message) => {
-      if (~topic.indexOf("power")) {
-        setPower(message.toUpperCase() !== "ON");
-      } else if (~topic.indexOf("launchPoints")) {
-        try {
-          launchPoints.current = JSON.parse(message);
-        } catch (e) {
-          launchPoints.current = message;
-        }
-      } else if (~topic.indexOf("foreground")) {
-        try {
-          setForegroundApp(JSON.parse(message));
-        } catch (e) {
-          setForegroundApp(message);
-        }
-      } else if (~topic.indexOf("SI")) {
-        setAvrInput(message);
-      }
-      // determine TV input (e.g. HDMI1, HDMI2, NetFlix, etc.)
-      if (power) {
-        console.log("__________POWER ", power);
-        setCurrentActivity("All Off");
-        return;
-      }
-
-      try {
-        if (tvType === "lgtv" && launchPoints.current) {
-          const lps = launchPoints.current,
-            fg = foregroundApp,
-            title = lps[fg.appId].title;
-          const lp = title || "unknown";
-          setTVInput(lp.replace(/\s+/, "").toLowerCase());
-          const o = Object.assign({}, deviceMap.lgtv);
-          o.foregroundApp = foregroundApp;
-          o.launchPoints = launchPoints.current;
-          o.power = power;
-          lgtv.current = { ...lgtv.current, ...o };
-        }
-
-        for (const activity of activities) {
-          const inputs = activity.inputs || {};
-          if (inputs.tv === tvInput && inputs.avr === avrInput) {
-            currentDevice.current = activity.defaultDevice;
-            setCurrentActivity(activity.name);
-            break;
-          }
-        }
-      } catch (e) {}
-    }; // onMessage
-
-    for (const device of devices) {
-      switch (device.type) {
-        case "lgtv":
-          MQTT.subscribe(`${Config.mqtt.lgtv}/${device.device}/status/power`, onMessage);
-          MQTT.subscribe(`${Config.mqtt.lgtv}/${device.device}/status/foregroundApp`, onMessage);
-          MQTT.subscribe(`${Config.mqtt.lgtv}/${device.device}/status/launchPoints`, onMessage);
-          break;
-        case "denon":
-          denon.current = device.device;
-          MQTT.subscribe(`${Config.mqtt.denon}/${device.device}/status/SI`, onMessage);
-          break;
-        case "tivo":
-          tivo.current = device;
-          break;
-        case "appletv":
-          appleTV.current = device.device;
-          break;
-        default:
-          break;
-      }
-    }
-
-    return () => {
-      for (const device of devices) {
-        switch (device.type) {
-          case "lgtv":
-            tvType = "lgtv";
-            MQTT.unsubscribe(`${Config.mqtt.lgtv}/${device.device}/status/power`, onMessage);
-            MQTT.unsubscribe(
-              `${Config.mqtt.lgtv}/${device.device}/status/foregroundApp`,
-              onMessage
-            );
-            MQTT.unsubscribe(`${Config.mqtt.lgtv}/${device.device}/status/launchPoints`);
-            break;
-          case "denon":
-            MQTT.unsubscribe(`${Config.mqtt.denon}/${device.device}/status/SI`, onMessage);
-            break;
-          case "tivo":
-            break;
-          default:
-            break;
-        }
-      }
-    };
-  }, []);
-
+  // first we need to find the theater in Config
   const findTheater = () => {
     for (const t of Config.theaters) {
       if (t.title === title) {
@@ -129,12 +23,12 @@ const TheaterItem = ({ title }) => {
     }
     return null;
   };
-
   const def = findTheater();
   if (!def) {
-    return <div>Config.js error: Theater {title} not found</div>;
+    throw new Error(`TheaterTile: theater ${title} not found in Config`);
   }
 
+  // create a hash map of device type => device config
   const devices = def.devices || [],
     deviceMap = {};
 
@@ -142,33 +36,74 @@ const TheaterItem = ({ title }) => {
     deviceMap[device.type] = device;
   }
 
+  // get instances of the devices
+  const lgtv = useLGTV(deviceMap.lgtv),
+    bravia = deviceMap.bravia ? useBravia(deviceMap.bravia) : {},
+    avr = deviceMap.denon ? useDenon(deviceMap.denon) : {},
+    appleTV = deviceMap.appletv ? useAppleTV(deviceMap.appletv.device) : {};
+
+  const tv = lgtv.name ? lgtv : bravia;
+
+  const currentDevice = useRef("None");
+
+  const [currentActivity, setCurrentActivity] = useState("All Off");
+  const [active, setActive] = useState(null);
+
+  // loop through activities and create a hashmap of name => activity definition
+  // while we're looping, we can compare the TV and AVR input with the inputs in the
+  // definition, to get the current activity
   const activities = def.activities || [],
     activitiesMap = {};
 
-  for (const activity of activities) {
-    activitiesMap[activity.name] = activities;
+  if (tv.power === false || avr.power === false) {
+    if (currentActivity !== "All Off") {
+      setCurrentActivity("All Off");
+      currentDevice.current = "None";
+      setActive(null);
+    }
+  } else {
+    for (const activity of activities) {
+      activitiesMap[activity.name] = activities;
+      const inputs = activity.inputs || {};
+      if (inputs.tv === tv.input && inputs.avr === avr.input) {
+        if (currentDevice.current === "None") {
+          currentDevice.current = activity.defaultDevice;
+        }
+        if (currentActivity !== activity.name) {
+          if (tv.power && avr.power) {
+            setCurrentActivity(activity.name);
+            setActive(activity);
+            currentDevice.current = activity.defaultDevice;
+          } else if (currentActivity !== "All Off") {
+            setCurrentActivity("All Off");
+            currentDevice.current = "None";
+            setActive(null);
+          }
+        }
+        break;
+      }
+    }
   }
 
   const renderCurrentDevice = () => {
     if (currentDevice.current === "TiVo") {
-      return <TiVo device={tivo.current} />;
+      return <TiVo device={deviceMap.tivo} />;
     } else if (currentDevice.current === "Apple TV") {
-      return <AppleTV device={appleTV.current} />;
+      return <AppleTV device={appleTV.device} />;
     }
     return <div>Current Device: {currentDevice.current}</div>;
   };
-  return (
+  return active ? (
     <ListGroup.Item style={{ display: "flex", textAlign: "center" }}>
       <div style={{ flex: 2 }}>
         {currentActivity}
         <br />
         {renderCurrentDevice()}
       </div>
-      <div style={{ flex: 1 }}>
-        TV: {tvInput.toUpperCase()}
-        <br />
-        AVR: {avrInput}
-      </div>
+    </ListGroup.Item>
+  ) : (
+    <ListGroup.Item style={{ display: "flex", textAlign: "center" }}>
+      <div>Current Activity: {currentActivity}</div>
     </ListGroup.Item>
   );
 };

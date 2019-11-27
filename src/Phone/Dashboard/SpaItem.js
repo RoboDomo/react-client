@@ -1,56 +1,45 @@
-import React, { useState, useEffect } from "react";
-import useConfig from "@/hooks/useConfig";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ ____              ___ _                  
+/ ___| _ __   __ _|_ _| |_ ___ _ __ ___   
+\___ \| '_ \ / _` || || __/ _ \ '_ ` _ \  
+ ___) | |_) | (_| || || ||  __/ | | | | | 
+|____/| .__/ \__,_|___|\__\___|_| |_| |_| 
+      |_|                                 
+*/
+
+import React from "react";
+
+import useAutelis from "@/hooks/useAutelis";
 
 import { ListGroup, Badge } from "react-bootstrap";
 
-import MQTT from "@/lib/MQTT";
-
-const topics = ["spaHeat", "spaTemp", "spa", "jet", "blower", "spaLight"];
 const SpaItem = ({ device }) => {
-  const Config = useConfig();
-  const [state, setState] = useState({});
-
-  const controller = Config[device],
-    deviceMap = controller.deviceMap,
-    status_topic = Config.mqtt[device] + "/status/",
-    status_topic_length = status_topic.length;
-
-  useEffect(() => {
-    const onStateChange = (topic, newState) => {
-      const newValue = {},
-        what = topic.substr(status_topic_length),
-        key = deviceMap.backward[what] || what;
-
-      newValue[key] = newState;
-      setState(prev => ({ ...prev, ...newValue }));
-    };
-    topics.forEach(topic => {
-      const device = deviceMap.forward[topic] || topic;
-      MQTT.subscribe(status_topic + device, onStateChange);
-    });
-    return () => {
-      topics.forEach(topic => {
-        const device = deviceMap.forward[topic] || topic;
-        MQTT.unsubscribe(status_topic + device, onStateChange);
-      });
-    };
-  }, [deviceMap.backward, deviceMap.forward, status_topic, status_topic_length]);
+  const autelis = useAutelis();
 
   const isOn = thing => {
-    const control = state[thing];
+    const control = autelis[thing];
 
     if (!control) {
       return false;
+    }
+    if (control === true) {
+      return control;
     }
     return control.toLowerCase() === "on";
   };
 
   const on = isOn("spa") || isOn("spaHeat") || isOn("jet") || isOn("blower") || isOn("spaLight"),
-    variant = on ? "danger" : undefined;
+    variant = on ? (autelis.spaHeat === "enabled" ? "danger" : "success") : undefined;
 
   const renderControl = (ndx, text, big) => {
-    const thing = state[ndx];
-    //        if (thing && state.spa !== 'on' ||  thing.toLowerCase() === 'off' ) {
+    const thing = autelis[ndx];
+    //        if (thing && autelis.spa !== 'on' ||  thing.toLowerCase() === 'off' ) {
     if (!thing || thing.toLowerCase() === "off") {
       return null;
     }
@@ -68,7 +57,7 @@ const SpaItem = ({ device }) => {
   if (on) {
     return (
       <ListGroup.Item variant={variant}>
-        {renderControl("spa", `Spa ${state.spaTemp}°F`, true)}
+        {renderControl("spa", `Spa ${autelis.spaTemp}°F`, true)}
         {renderControl("spaHeat", "Heat On")}
         {renderControl("jet", "Jets On")}
         {renderControl("blower", "Blower On")}

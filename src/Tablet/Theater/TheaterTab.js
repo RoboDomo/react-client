@@ -1,3 +1,17 @@
+/*
+ _____     _     _      _    
+|_   _|_ _| |__ | | ___| |_  
+  | |/ _` | '_ \| |/ _ \ __| 
+  | | (_| | |_) | |  __/ |_  
+  |_|\__,_|_.__/|_|\___|\__| 
+                             
+ _____ _                _           _____     _      
+|_   _| |__   ___  __ _| |_ ___ _ _|_   _|_ _| |__   
+  | | | '_ \ / _ \/ _` | __/ _ \ '__|| |/ _` | '_ \  
+  | | | | | |  __/ (_| | ||  __/ |   | | (_| | |_) | 
+  |_| |_| |_|\___|\__,_|\__\___|_|   |_|\__,_|_.__/  
+*/
+
 import React, { useState, useEffect, useReducer } from "react";
 
 import { Row, Col } from "react-bootstrap";
@@ -19,31 +33,18 @@ const TheaterTab = ({ style, theater }) => {
   const [currentActivity, setCurrentActivity] = useState("All Off");
   const [, dispatchActivity] = useReducer(macrosReducer);
 
-  //  const avr = useRef(null);
-  let tv = null,
-    avr = null;
-  //  const tv = useRef(null);
-
   // devices
   const devices = theater.devices || [],
     deviceMap = {};
 
   for (const device of devices) {
     deviceMap[device.type] = device;
-    switch (device.type) {
-      case "denon":
-        avr = useDenon({ ...device, debug: "TheaterTab" });
-        break;
-      case "lgtv":
-        tv = useLGTV({ ...device, debug: "TheaterTab" });
-        break;
-      case "bravia":
-        tv = useBravia({ ...device, debug: "TheaterTab" });
-        break;
-      default:
-        break;
-    }
   }
+  const avr = useDenon(deviceMap.denon);
+  const lgtv = useLGTV(deviceMap.lgtv);
+  const bravia = useLGTV(deviceMap.bravia);
+  const tv = lgtv.device ? lgtv : bravia;
+
   const handleDeviceClick = device => {
     setCurrentDevice(device.name);
   };

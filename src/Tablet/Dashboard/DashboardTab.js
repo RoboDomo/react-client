@@ -22,7 +22,6 @@ const DashboardTab = ({ dashboard }) => {
     tiles.current = tileDefinitions.map(tile => {
       switch (tile.type) {
         case "dimmer":
-          console.log("dimmer", tile);
           return (
             <DimmerTile key={++key} name={tile.device} hub={tile.hub}>
               <div>{tile.type}</div>

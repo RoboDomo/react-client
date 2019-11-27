@@ -1,5 +1,18 @@
-import React from "react";
-import useConfig from "@/hooks/useConfig";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ ____             _                    __  _     ____ _______     __ 
+|  _ \  _____   _(_) ___ ___  ___     / / | |   / ___|_   _\ \   / / 
+| | | |/ _ \ \ / / |/ __/ _ \/ __|   / /  | |  | |  _  | |  \ \ / /  
+| |_| |  __/\ V /| | (_|  __/\__ \  / /   | |__| |_| | | |   \ V /   
+|____/ \___| \_/ |_|\___\___||___/ /_/    |_____\____| |_|    \_/    
+*/
+
+import React, { useReducer } from "react";
 
 import { ButtonGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
 
@@ -18,7 +31,10 @@ import {
   FaDotCircle,
 } from "react-icons/fa";
 
-import RemoteButton from "@/common/RemoteButton";
+import ActionButton from "@/common/ActionButton";
+
+import useLGTV from "@/hooks/useLGTV";
+import lgtvReducer from "@/hooks/reducers/lgtvReducer";
 
 // TODO: move these to config.js in config-microservice
 const ignoredLaunchPoints = [
@@ -49,11 +65,15 @@ const ignoredLaunchPoints = [
 // If props.lgtv.tuner is set to true, then additional controls are rendered.
 // Number pad, for example, is not needed for smart TV apps, but are needed
 // for watching TV.
-const LGTVControl = ({ lgtv, tvInput, avrInput }) => {
-  const Config = useConfig();
-  const status_topic = Config.mqtt.lgtv + "/" + lgtv.device + "/status/",
-    //    status_topic_length = status_topic.length,
-    set_topic = status_topic.replace("status", "set") + "command";
+const LGTVControl = ({ config }) => {
+  const lgtv = useLGTV(config),
+    tvInput = lgtv.input,
+    [, dispatch] = useReducer(lgtvReducer, { device: config.device });
+
+  if (!lgtv.launchPoints || !lgtv.foregroundApp) {
+    return null;
+  }
+  console.log("launchPoints", lgtv.launchPoints);
 
   const foregroundApp = lgtv.foregroundApp,
     launchPoints = lgtv.launchPoints,
@@ -74,14 +94,19 @@ const LGTVControl = ({ lgtv, tvInput, avrInput }) => {
       return (
         <div style={{ marginTop: 4 }}>
           <ButtonGroup>
-            <RemoteButton>Netflix</RemoteButton>
-            <RemoteButton>Prime</RemoteButton>
-            <RemoteButton>YouTube</RemoteButton>
-            <RemoteButton>CBS</RemoteButton>
+            <ActionButton dispatch={dispatch}>Netflix</ActionButton>
+            <ActionButton dispatch={dispatch}>Prime</ActionButton>
+            <ActionButton dispatch={dispatch}>YouTube</ActionButton>
+            <ActionButton dispatch={dispatch}>CBS</ActionButton>
           </ButtonGroup>
         </div>
       );
     }
+
+    const handleLaunchPointClicked = info => {
+      console.log("info", info, info.id);
+      lgtvReducer({ device: lgtv.device }, { type: "LAUNCH-" + info.id });
+    };
 
     return (
       <div
@@ -112,6 +137,7 @@ const LGTVControl = ({ lgtv, tvInput, avrInput }) => {
                 flex: 1,
               }}
               key={info.id}
+              onClick={() => handleLaunchPointClicked(info) }
             >
               <OverlayTrigger key={okey} overlay={overlay}>
                 <img alt={info.title} style={{ maxWidth: 48, minHeight: 48 }} src={info.icon} />
@@ -147,10 +173,34 @@ const LGTVControl = ({ lgtv, tvInput, avrInput }) => {
   const renderHDMI = () => {
     return (
       <ButtonGroup>
-        <RemoteButton variant={tvInput === "hdmi1" ? "primary" : undefined}>HDMI1</RemoteButton>
-        <RemoteButton variant={tvInput === "hdmi2" ? "primary" : undefined}>HDMI2</RemoteButton>
-        <RemoteButton variant={tvInput === "hdmi3" ? "primary" : undefined}>HDMI3</RemoteButton>
-        <RemoteButton variant={tvInput === "hdmi4" ? "primary" : undefined}>HDMI4</RemoteButton>
+        <ActionButton
+          dispatch={dispatch}
+          action="hdmi1"
+          variant={tvInput === "hdmi1" ? "success" : undefined}
+        >
+          HDMI1
+        </ActionButton>
+        <ActionButton
+          dispatch={dispatch}
+          action="hdmi2"
+          variant={tvInput === "hdmi2" ? "success" : undefined}
+        >
+          HDMI2
+        </ActionButton>
+        <ActionButton
+          dispatch={dispatch}
+          action="hdmi3"
+          variant={tvInput === "hdmi3" ? "success" : undefined}
+        >
+          HDMI3
+        </ActionButton>
+        <ActionButton
+          dispatch={dispatch}
+          action="hdmi4"
+          variant={tvInput === "hdmi4" ? "success" : undefined}
+        >
+          HDMI4
+        </ActionButton>
       </ButtonGroup>
     );
   };
@@ -162,63 +212,63 @@ const LGTVControl = ({ lgtv, tvInput, avrInput }) => {
     return (
       <>
         <div style={{ marginTop: 4 }}>
-          <RemoteButton topic={set_topic} message="Back">
+          <ActionButton dispatch={dispatch} aciton="Back">
             Back
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="Guide">
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="Guide">
             Home
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="Guide">
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="Guide">
             Guide
-          </RemoteButton>
+          </ActionButton>
         </div>
         <div style={{ marginTop: 4 }}>
           <ButtonGroup>
-            <RemoteButton topic={set_topic} message="NUM1">
+            <ActionButton dispatch={dispatch} aciton="NUM1">
               1
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="NUM2">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="NUM2">
               2
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="NUM3">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="NUM3">
               3
-            </RemoteButton>
+            </ActionButton>
           </ButtonGroup>
           <br />
           <ButtonGroup>
-            <RemoteButton topic={set_topic} message="NUM4">
+            <ActionButton dispatch={dispatch} aciton="NUM4">
               4
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="NUM5">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="NUM5">
               5
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="NUM6">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="NUM6">
               6
-            </RemoteButton>
+            </ActionButton>
           </ButtonGroup>
           <br />
           <ButtonGroup>
-            <RemoteButton topic={set_topic} message="NUM7">
+            <ActionButton dispatch={dispatch} aciton="NUM7">
               7
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="NUM8">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="NUM8">
               8
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="NUM9">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="NUM9">
               9
-            </RemoteButton>
+            </ActionButton>
           </ButtonGroup>
           <br />
           <ButtonGroup>
-            <RemoteButton topic={set_topic} message="CLEAR">
+            <ActionButton dispatch={dispatch} aciton="CLEAR">
               .
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="NUM0">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="NUM0">
               0
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="ENTER">
+            </ActionButton>
+            <ActionButton dispatch={dispatch} aciton="ENTER">
               Enter
-            </RemoteButton>
+            </ActionButton>
           </ButtonGroup>
         </div>
       </>
@@ -244,64 +294,64 @@ const LGTVControl = ({ lgtv, tvInput, avrInput }) => {
       <div style={{ marginTop: 4, textAlign: "center" }}>{renderHDMI()}</div>
       <div style={{ margin: 10, textAlign: "center" }}>
         <ButtonGroup>
-          <RemoteButton variant="none" />
-          <RemoteButton topic={set_topic} message="UP">
+          <ActionButton variant="none" />
+          <ActionButton dispatch={dispatch} aciton="UP">
             <FaChevronUp />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="CHANNELUP" variant="info">
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="CHANNELUP" variant="info">
             +
-          </RemoteButton>
+          </ActionButton>
         </ButtonGroup>
         <br />
         <ButtonGroup>
-          <RemoteButton topic={set_topic} message="LEFT">
+          <ActionButton dispatch={dispatch} aciton="LEFT">
             <FaChevronLeft />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="SELECT" variant="primary">
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="SELECT" variant="primary">
             Select
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="RIGHT">
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="RIGHT">
             <FaChevronRight />
-          </RemoteButton>
+          </ActionButton>
         </ButtonGroup>
         <br />
         <ButtonGroup>
-          <RemoteButton variant="none" />
-          <RemoteButton topic={set_topic} message="DOWN">
+          <ActionButton variant="none" />
+          <ActionButton dispatch={dispatch} aciton="DOWN">
             <FaChevronDown />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="CHANNELDOWN" variant="info">
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="CHANNELDOWN" variant="info">
             -
-          </RemoteButton>
+          </ActionButton>
         </ButtonGroup>
       </div>
       <div style={{ textAlign: "center" }}>{renderKeypad()}</div>
       <div style={{ textAlign: "center", marginTop: 4 }}>
         <ButtonGroup>
-          <RemoteButton topic={set_topic} message="REPLAY" mini>
+          <ActionButton dispatch={dispatch} aciton="REPLAY" mini>
             <FaFastBackward />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="REVERSE" mini>
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="REVERSE" mini>
             <FaBackward />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="PAUSE" mini>
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="PAUSE" mini>
             <FaPause />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="PLAY" mini>
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="PLAY" mini>
             <FaPlay />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="SLOW" mini>
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="SLOW" mini>
             <FaStepForward />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="FORWARD" mini>
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="FORWARD" mini>
             <FaForward />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="ADVANCE" mini>
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="ADVANCE" mini>
             <FaFastForward />
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="RECORD" mini variant="danger">
+          </ActionButton>
+          <ActionButton dispatch={dispatch} aciton="RECORD" mini variant="danger">
             <FaDotCircle />
-          </RemoteButton>
+          </ActionButton>
         </ButtonGroup>
       </div>
     </>

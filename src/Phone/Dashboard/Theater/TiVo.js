@@ -3,38 +3,17 @@ import useConfig from "@/hooks/useConfig";
 
 import { Image } from "react-bootstrap";
 
-import MQTT from "@/lib/MQTT";
+import useTiVo from "@/hooks/useTiVo";
 
 const TiVo = ({ device }) => {
-  const Config = useConfig();
-  const [channel, setChannel] = useState(0);
-  const [channels, setChannels] = useState({});
+  const tivo = useTiVo(device);
+  const tvguide = tivo.guide;
 
-  useEffect(() => {
-    const handleMessage = (topic, message) => {
-      if (~topic.indexOf("channels")) {
-        try {
-          setChannels(JSON.parse(message));
-        } catch (e) {
-          setChannels(message);
-        }
-      } else if (~topic.indexOf("channel")) {
-        setChannel(message);
-      }
-    };
-
-    MQTT.subscribe(`${Config.mqtt.tivo}/${device.device}/status/channel`, handleMessage);
-    MQTT.subscribe(`${Config.mqtt.tvguide}/${device.guide}/status/channels`, handleMessage);
-    return () => {
-      MQTT.unsubscribe(`${Config.mqtt.tivo}/${device.device}/status/channel`, handleMessage);
-      MQTT.unsubscribe(`${Config.mqtt.tvguide}/${device.guide}/status/channels`, handleMessage);
-    };
-  }, [Config.mqtt.tivo, Config.mqtt.tvguide, device.device, device.guide]);
-
-  const info = channels[channel];
+  const info = tvguide.channels[tivo.channel];
   if (!info) {
     return null;
   }
+
   return (
     <>
       <div style={{ textAlign: "center" }}>
@@ -47,4 +26,5 @@ const TiVo = ({ device }) => {
   );
 };
 
+//
 export default TiVo;

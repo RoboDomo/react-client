@@ -9,6 +9,10 @@ const LOCALSTORAGE_KEY = "phoneDashboardTab";
 
 const Dashboard = () => {
   const config = useConfig();
+  if (!config) {
+    return null;
+  }
+
   const [activeTab, setActiveTab] = useState(localStorage.getItem(LOCALSTORAGE_KEY) || "1");
 
   return (

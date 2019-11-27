@@ -1,6 +1,19 @@
+/*
+ _____     _     _      _    
+|_   _|_ _| |__ | | ___| |_  
+  | |/ _` | '_ \| |/ _ \ __| 
+  | | (_| | |_) | |  __/ |_  
+  |_|\__,_|_.__/|_|\___|\__| 
+                             
+ _     ____ _______     ______            _             _  
+| |   / ___|_   _\ \   / / ___|___  _ __ | |_ _ __ ___ | | 
+| |  | |  _  | |  \ \ / / |   / _ \| '_ \| __| '__/ _ \| | 
+| |__| |_| | | |   \ V /| |__| (_) | | | | |_| | | (_) | | 
+|_____\____| |_|    \_/  \____\___/|_| |_|\__|_|  \___/|_| 
+*/
+
 import React, { useReducer } from "react";
 import lgtvReducer from "@/hooks/reducers/lgtvReducer";
-import useConfig from "@/hooks/useConfig";
 
 import { Image, ButtonGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
 

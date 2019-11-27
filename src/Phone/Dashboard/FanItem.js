@@ -1,50 +1,36 @@
-import React, { useState, useEffect } from "react";
-import useConfig from "@/hooks/useConfig";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+
+ _____           ___ _                  
+|  ___|_ _ _ __ |_ _| |_ ___ _ __ ___   
+| |_ / _` | '_ \ | || __/ _ \ '_ ` _ \  
+|  _| (_| | | | || || ||  __/ | | | | | 
+|_|  \__,_|_| |_|___|\__\___|_| |_| |_| 
+                                        
+*/
+
+import React, { useReducer } from "react";
+import { useFan } from "@/hooks/useThings";
 import { Badge, ListGroup } from "react-bootstrap";
 
 import MQTT from "@/lib/MQTT";
 import { GiComputerFan } from "react-icons/gi";
 
-const FanItem = ({ name }) => {
-  const config = useConfig();
-  const status_topic = `${config.mqtt.smartthings}/${name}/`,
-    status_topic_length = status_topic.length,
-    set_topic = status_topic;
-  const [power, setPower] = useState("off");
-  const [level, setLevel] = useState(0);
+const FanItem = ({ hub, name }) => {
+  const fan = useFan(name, hub);
 
-  useEffect(() => {
-    const onStateChange = (topic, newState) => {
-      const key = topic.substr(status_topic_length);
-      switch (key) {
-        case "switch":
-          setPower(newState);
-          break;
-        case "level":
-          setLevel(newState);
-          break;
-        default:
-          console.log("invalid state", key);
-          break;
-      }
-    };
-
-    MQTT.subscribe(status_topic + "switch", onStateChange);
-    MQTT.subscribe(status_topic + "level", onStateChange);
-
-    return () => {
-      MQTT.unsubscribe(status_topic + "switch", onStateChange);
-      MQTT.unsubscribe(status_topic + "level", onStateChange);
-    };
-  }, [status_topic, status_topic_length]);
-
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
   const onClick = e => {
     e.stopPropagation();
 
     let value = 25,
-      lvl = Number(level);
+      lvl = Number(fan.level);
 
-    if (power === "off") {
+    if (fan.switch === "off") {
       lvl = 25;
     } else if (lvl < 34) {
       value = 50;
@@ -55,19 +41,27 @@ const FanItem = ({ name }) => {
     }
 
     if (value) {
-      setLevel(value);
-      setPower("on");
-      MQTT.publish(set_topic + "switch/set", "on");
-      MQTT.publish(set_topic + "level/set", value);
+      if (fan.switch !== "on") {
+        fan.level = value;
+        forceUpdate();
+        // we need to delay a bit so the switch on takes
+        setTimeout(() => {
+          fan.switch = "on";
+          forceUpdate();
+        }, 100);
+      } else {
+        fan.level = value;
+        forceUpdate();
+      }
     } else {
-      setPower("off");
-      MQTT.publish(set_topic + "switch/set", "off");
+      fan.switch = "off";
+      forceUpdate();
     }
   };
 
   let value = "Off";
-  if (power === "on") {
-    const l = Number(level);
+  if (fan.switch === "on") {
+    const l = Number(fan.level);
     if (l < 34) {
       value = "Low";
     } else if (l < 67) {
@@ -79,7 +73,7 @@ const FanItem = ({ name }) => {
   return (
     <ListGroup.Item
       style={{
-        color: power === "on" ? "yellow" : undefined,
+        color: fan.switch === "on" ? "yellow" : undefined,
       }}
       onClick={onClick}
     >
@@ -92,4 +86,5 @@ const FanItem = ({ name }) => {
   );
 };
 
+//
 export default FanItem;

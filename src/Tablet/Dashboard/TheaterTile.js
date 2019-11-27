@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 
 import useConfig from "@/hooks/useConfig";
 import useLGTV from "@/hooks/useLGTV";
 import useDenon from "@/hooks/useDenon";
 import useBravia from "@/hooks/useBravia";
-import useTiVo from "@/hooks/useTiVo";
 import useAppleTV from "@/hooks/useAppleTV";
 
 import Tile from "./Tile";
@@ -40,7 +39,7 @@ const TheaterTile = ({ title }) => {
   }
 
   // get instances of the devices
-  const lgtv = deviceMap.lgtv ? useLGTV(deviceMap.lgtv) : {},
+  const lgtv = useLGTV(deviceMap.lgtv),
     bravia = deviceMap.bravia ? useBravia(deviceMap.bravia) : {},
     avr = deviceMap.denon ? useDenon(deviceMap.denon) : {},
     appleTV = deviceMap.appletv ? useAppleTV(deviceMap.appletv.device) : {};

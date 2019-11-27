@@ -1,39 +1,37 @@
-import React, { useState, useEffect } from "react";
-import useConfig from "@/hooks/useConfig";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ ____          _ _       _     ___ _                  
+/ ___|_      _(_) |_ ___| |__ |_ _| |_ ___ _ __ ___   
+\___ \ \ /\ / / | __/ __| '_ \ | || __/ _ \ '_ ` _ \  
+ ___) \ V  V /| | || (__| | | || || ||  __/ | | | | | 
+|____/ \_/\_/ |_|\__\___|_| |_|___|\__\___|_| |_| |_| 
+                                                      
+*/
 
+import React from "react";
+import { useSwitch } from "@/hooks/useThings";
+import { TiLightbulb } from "react-icons/ti";
 import { Badge, ListGroup } from "react-bootstrap";
 
-import MQTT from "@/lib/MQTT";
-import { TiLightbulb } from "react-icons/ti";
-
-const SwitchItem = ({ name }) => {
-  const Config = useConfig();
-  const [state, setState] = useState("off");
-  const status_topic = Config.mqtt.smartthings + "/" + name + "/",
-    set_topic = status_topic;
-
-  useEffect(() => {
-    const onStateChange = (topic, newState) => {
-      setState(newState);
-    };
-    MQTT.subscribe(status_topic + "switch", onStateChange);
-    return () => {
-      MQTT.unsubscribe(status_topic + "switch", onStateChange);
-    };
-  }, [status_topic]);
+const SwitchItem = ({ hub, name }) => {
+  const thing = useSwitch(name, hub);
 
   const onClick = e => {
     e.stopPropagation();
 
-    if (state === "on") {
-      setState("off");
-      MQTT.publish(set_topic + "switch/set", "off");
+    if (thing.switch === "on") {
+      thing.switch = "off";
     } else {
-      setState("on");
-      MQTT.publish(set_topic + "switch/set", "on");
+      thing.switch = "on";
     }
   };
-  if (state === "off") {
+
+  if (thing.switch === "off") {
     return (
       <ListGroup.Item onClick={onClick}>
         <TiLightbulb size={24} style={{ marginBottom: 10 }} />

@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import { ButtonGroup, Button, Dropdown } from "react-bootstrap";
 
 const DevicesMenu = ({ devices, currentDevice, onSelect }) => {
@@ -24,7 +24,6 @@ const DevicesMenu = ({ devices, currentDevice, onSelect }) => {
       <Dropdown.Toggle split variant="primary">
         <Dropdown.Menu>
           {devices.map(device => {
-            //            console.log("device", device);
             return (
               <Dropdown.Item eventKey={device.name} key={device.name}>
                 {device.name}
@@ -37,4 +36,5 @@ const DevicesMenu = ({ devices, currentDevice, onSelect }) => {
   );
 };
 
+//
 export default DevicesMenu;
