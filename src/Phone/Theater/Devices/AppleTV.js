@@ -1,4 +1,18 @@
-import React, { useState, useEffect } from "react";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ ____             _                    __     _                _     _______     __ 
+|  _ \  _____   _(_) ___ ___  ___     / /    / \   _ __  _ __ | | __|_   _\ \   / / 
+| | | |/ _ \ \ / / |/ __/ _ \/ __|   / /    / _ \ | '_ \| '_ \| |/ _ \| |  \ \ / /  
+| |_| |  __/\ V /| | (_|  __/\__ \  / /    / ___ \| |_) | |_) | |  __/| |   \ V /   
+|____/ \___| \_/ |_|\___\___||___/ /_/    /_/   \_\ .__/| .__/|_|\___||_|    \_/    
+*/
+
+import React, { useReducer } from "react";
 
 import RemoteButton from "@/common/RemoteButton";
 import { Row, ButtonGroup } from "react-bootstrap";
@@ -7,6 +21,7 @@ import {
   FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
+  FaFastBackward,
   FaBackward,
   FaPause,
   FaPlay,
@@ -14,10 +29,11 @@ import {
   FaFastForward,
 } from "react-icons/fa";
 
-import MQTT from "@/lib/MQTT";
+import useAppleTV from "@/hooks/useAppleTV";
+import appleTVReducer from "@/hooks/reducers/appleTVReducer";
 
 const rowStyle = {
-  marginTop: 4,
+  marginTop: 8,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -44,38 +60,10 @@ const appName = n => {
 // appletv/device/set/command Pause
 
 const AppleTV = ({ device }) => {
-  const topic = "appletv/" + device + "/status",
-    set_topic = topic.replace("status", "set/command");
+  const appleTV = useAppleTV(device),
+    { info, elapsedTime } = appleTV;
 
-  const [elapsedTime, setElapsedTime] = useState(null);
-  const [info, setInfo] = useState(null);
-
-  useEffect(() => {
-    const onInfoChange = (topic, message) => {
-      if (!message) {
-        setElapsedTime(null);
-      } else {
-        let msg;
-        try {
-          msg = JSON.parse(message);
-        } catch (e) {
-          msg = message;
-        }
-        setInfo(prev => ({ ...prev, ...msg }));
-      }
-    };
-
-    const onTimeChange = (topic, message) => {
-      setElapsedTime(message);
-    };
-
-    MQTT.subscribe(topic + "/info", onInfoChange);
-    MQTT.subscribe(topic + "/elapsedTime", onTimeChange);
-    return () => {
-      MQTT.unsubscribe(topic + "/info", onInfoChange);
-      MQTT.unsubscribe(topic + "/elapsedTime", onTimeChange);
-    };
-  }, [topic]);
+  const [, dispatch] = useReducer(appleTVReducer, { device: device });
 
   const renderPlaybackState = () => {
     if (info.duration) {
@@ -101,12 +89,24 @@ const AppleTV = ({ device }) => {
 
     const app = appName(info.appDisplayName || info.appBundleIdentifier);
 
+    const renderArtist = () => {
+      if (info.artist === "" && info.album === "") {
+        return null;
+      }
+      return (
+        <>
+          {info.artist} {info.album} <br />
+        </>
+      );
+    };
+
+    const title = info.title.length > 10 ? info.title.substr(0, 10) + "..." : info.title;
     return (
-      <div style={{ height: 170, textAlign: "center" }}>
+      <div style={{ textAlign: "center" }}>
         <h3>{app}</h3>
         <h4>
-          {info.artist} {info.album} <br />
-          {info.title}
+          {renderArtist()}
+          <span style={{ fontSize: 36 }}>{title}</span>
           <br />
           <div style={{ fontWeight: "bold" }}>{renderPlaybackState()}</div>
         </h4>
@@ -116,62 +116,61 @@ const AppleTV = ({ device }) => {
 
   const renderPlaybackControls = () => {
     const playButton = (
-        <RemoteButton topic={set_topic} message="TogglePlayPause" mini>
+        <RemoteButton dispatch={dispatch} action="play" mini>
           <FaPlay />
         </RemoteButton>
       ),
       pauseButton = (
-        <RemoteButton topic={set_topic} message="TogglePlayPause" mini>
+        <RemoteButton dispatch={dispatch} action="pause" mini>
           <FaPause />
         </RemoteButton>
       );
 
     return (
       <ButtonGroup>
-        <RemoteButton topic={set_topic} message="SkipBackward" mini>
-          <FaForward />
-        </RemoteButton>
-        <RemoteButton topic={set_topic} message="BeginRewind" mini>
-          <FaBackward />
-        </RemoteButton>
-        {pauseButton}
-        {playButton}
-        <RemoteButton topic={set_topic} message="BeginFastFoward" mini>
-          <FaForward />
-        </RemoteButton>
-        <RemoteButton topic={set_topic} message="SkipForward" mini>
-          <FaFastForward />
-        </RemoteButton>
+        <ButtonGroup>
+          <RemoteButton dispatch={dispatch} action="skipbackward" mini>
+            <FaFastBackward />
+          </RemoteButton>
+          <RemoteButton dispatch={dispatch} action="beginrewind" mini>
+            <FaBackward />
+          </RemoteButton>
+          {pauseButton}
+          {playButton}
+          <RemoteButton dispatch={dispatch} action="beginforward" mini>
+            <FaForward />
+          </RemoteButton>
+          <RemoteButton dispatch={dispatch} action="skipforward" mini>
+            <FaFastForward />
+          </RemoteButton>
+        </ButtonGroup>
       </ButtonGroup>
     );
   };
 
   return (
     <>
-      <Row style={rowStyle}>{renderNowPlaying()}</Row>
-      <Row style={rowStyle}>
+      <Row style={{ ...rowStyle, marginTop: 4 }}> {renderNowPlaying()}</Row>
+      <Row style={{ ...rowStyle, marginTop: 4 }}>
         <ButtonGroup>
-          <RemoteButton topic={set_topic} message="Stop">
+          <RemoteButton dispatch={dispatch} action="stop">
             Stop
           </RemoteButton>
-          <RemoteButton topic={set_topic} message="Menu">
+          <RemoteButton dispatch={dispatch} action="menu">
             Menu
           </RemoteButton>
-          <RemoteButton variant="primary" topic={set_topic} message="Suspend">
+          <RemoteButton variant="primary" dispatch={dispatch} action="home">
             Home
           </RemoteButton>
-          <RemoteButton topic={set_topic} message="Power">
+          <RemoteButton dispatch={dispatch} action="power" variant="danger">
             Power
-          </RemoteButton>
-          <RemoteButton topic={set_topic} message="Reboot">
-            Reboot
           </RemoteButton>
         </ButtonGroup>
       </Row>
-      <Row style={rowStyle}>
+      <Row style={{ ...rowStyle, marginTop: 4 }}>
         <ButtonGroup>
           <RemoteButton variant="none" />
-          <RemoteButton topic={set_topic} message="Up">
+          <RemoteButton dispatch={dispatch} action="up">
             <FaChevronUp />
           </RemoteButton>
           <RemoteButton variant="none" />
@@ -179,13 +178,13 @@ const AppleTV = ({ device }) => {
       </Row>
       <Row style={rowStyle}>
         <ButtonGroup>
-          <RemoteButton topic={set_topic} message="Left">
+          <RemoteButton dispatch={dispatch} action="left">
             <FaChevronLeft />
           </RemoteButton>
-          <RemoteButton variant="primary" topic={set_topic} message="Select">
+          <RemoteButton variant="primary" dispatch={dispatch} action="select">
             Select
           </RemoteButton>
-          <RemoteButton topic={set_topic} message="Right">
+          <RemoteButton dispatch={dispatch} action="right">
             <FaChevronRight />
           </RemoteButton>
         </ButtonGroup>
@@ -193,7 +192,7 @@ const AppleTV = ({ device }) => {
       <Row style={rowStyle}>
         <ButtonGroup>
           <RemoteButton variant="none" />
-          <RemoteButton topic={set_topic} message="Down">
+          <RemoteButton dispatch={dispatch} action="down">
             <FaChevronDown />
           </RemoteButton>
           <RemoteButton variant="none" />

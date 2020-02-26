@@ -1,3 +1,17 @@
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ __  __       _       ____                            
+|  \/  | __ _(_)_ __ / ___|  ___ _ __ ___  ___ _ __   
+| |\/| |/ _` | | '_ \\___ \ / __| '__/ _ \/ _ \ '_ \  
+| |  | | (_| | | | | |___) | (__| | |  __/  __/ | | | 
+|_|  |_|\__,_|_|_| |_|____/ \___|_|  \___|\___|_| |_| 
+*/
+
 import React, { useState } from "react";
 
 import { Navbar, Nav, TabContainer, TabContent, TabPane } from "react-bootstrap";
@@ -26,9 +40,13 @@ const style = {
  */
 const MainScreen = () => {
   const [activeTab, setActiveTab] = useState(localStorage.getItem(LOCALSTORAGE_KEY) || "1");
-  console.log("height", window.outerHeight);
+
+  const reload = () => {
+    window.location.reload();
+  };
+
   return (
-    <div style={{ marginTop: 50 }}>
+    <div style={{ marginTop: 0 }}>
       <TabContainer
         activeKey={parseInt(activeTab, 10)}
         id="mainTabs"
@@ -38,7 +56,9 @@ const MainScreen = () => {
         onSelect={() => {}}
       >
         <Navbar bg="dark" variant="dark">
-          <Navbar.Brand>RoboDomo</Navbar.Brand>
+          <Navbar.Brand>
+            <span onClick={reload}>RoboDomo</span>
+          </Navbar.Brand>
         </Navbar>
         <Navbar
           className="justify-content-between"
@@ -48,7 +68,6 @@ const MainScreen = () => {
           onSelect={tab => {
             localStorage.setItem(LOCALSTORAGE_KEY, tab);
             setActiveTab(tab);
-            console.log("eventKey");
           }}
         >
           <Nav justify fill variant="tabs" defaultActiveKey={activeTab}>

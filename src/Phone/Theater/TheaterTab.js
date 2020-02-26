@@ -1,40 +1,49 @@
-import React, { useState, useEffect, useRef } from "react";
-//import { Row, Col } from "react-bootstrap";
-//import { ListGroup } from "react-bootstrap";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ _____ _                _           _____     _      
+|_   _| |__   ___  __ _| |_ ___ _ _|_   _|_ _| |__   
+  | | | '_ \ / _ \/ _` | __/ _ \ '__|| |/ _` | '_ \  
+  | | | | | |  __/ (_| | ||  __/ |   | | (_| | |_) | 
+  |_| |_| |_|\___|\__,_|\__\___|_|   |_|\__,_|_.__/  
+*/
+
+import React, { useState, useEffect, useReducer } from "react";
+
 import ActivitiesMenu from "./ActivitiesMenu";
 import DevicesMenu from "./DevicesMenu";
 import Audio from "./Devices/Audio";
 import TiVo from "./Devices/TiVo";
 import AppleTV from "./Devices/AppleTV";
-import LGTV from "./Devices/LGTV";
+import LGTVControl from "./Devices/LGTV";
 import Harmony from "./Devices/Harmony";
 
-import MQTT from "@/lib/MQTT";
-//import MQTTScript from "@/lib/MQTTScript";
+import macrosReducer from "@/hooks/reducers/macrosReducer";
+
+import useLGTV from "@/hooks/useLGTV";
+import useBravia from "@/hooks/useBravia";
+import useDenon from "@/hooks/useDenon";
 
 const TheaterTab = ({ theater }) => {
-  const [power, setPower] = useState(false);
   const [currentDevice, setCurrentDevice] = useState("None");
   const [currentActivity, setCurrentActivity] = useState("All Off");
-  const [startingActivity, setStartingActivity] = useState(null);
-  const [avrInput, setAVRInput] = useState(null);
-  const [lgtv, setLGTV] = useState({});
+  const [, dispatchActivity] = useReducer(macrosReducer);
 
   // devices
-  const denon = useRef(null);
   const devices = theater.devices || [],
     deviceMap = {};
 
   for (const device of devices) {
     deviceMap[device.type] = device;
-    if (device.type === "denon") {
-      denon.current = device;
-    }
   }
-
-  const handleDeviceClick = device => {
-    setCurrentDevice(device);
-  };
+  const avr = useDenon(deviceMap.denon);
+  const lgtv = useLGTV(deviceMap.lgtv);
+  const bravia = useBravia(deviceMap.bravia);
+  const tv = lgtv.device ? lgtv : bravia;
 
   // activities
   const activities = theater.activities || [],
@@ -44,104 +53,41 @@ const TheaterTab = ({ theater }) => {
     activitiesMap[activity.name] = activities;
   }
 
-  const handleActivityClick = activity => {
-    setCurrentActivity(activity.name);
-    setCurrentDevice(activity.defaultDevice);
-    setStartingActivity(activity);
-  };
-
-  let tvType = "unknown";
-
-  const tvInput = useRef("");
-  const launchPoints = useRef([]);
-  const foregroundApp = useRef(null);
-
   useEffect(() => {
-    const onMessage = (topic, message) => {
-      if (~topic.indexOf("power")) {
-        setPower(message === "on");
-      } else if (~topic.indexOf("foreground")) {
-        try {
-          foregroundApp.current = JSON.parse(message);
-        } catch (e) {
-          foregroundApp.current = message;
-        }
-      } else if (~topic.indexOf("launchPoints")) {
-        try {
-          launchPoints.current = JSON.parse(message);
-        } catch (e) {
-          launchPoints.current = message;
-        }
-      } else if (~topic.indexOf("SI")) {
-        setAVRInput(message);
-      }
-
-      // determine TV input (e.g. HDMI1, HDMI2, NetFlix, etc.)
-      if (!power) {
-        setCurrentActivity("All Off");
-        setCurrentDevice("NONE");
-        return;
-      }
-
-      try {
-        if (tvType === "lgtv") {
-          const lps = launchPoints.current,
-            fg = foregroundApp.current,
-            title = lps[fg.appId].title;
-          const lp = title || "unknown";
-          tvInput.current = lp.replace(/\s+/, "").toLowerCase();
-          const o = Object.assign({}, deviceMap.lgtv);
-          o.foregroundApp = foregroundApp.current;
-          o.launchPoints = launchPoints.current;
-          o.power = power;
-          setLGTV(prev => ({ ...prev, ...o }));
-        }
-      } catch (e) {}
-
+    //    let found = false;
+    if (!tv.power) {
+      //      console.log("TV OFF");
+      setCurrentActivity("All Off");
+      setCurrentDevice(null);
+      tv.input = "Off";
+      //      found = true;
+    } else {
       for (const activity of activities) {
         const inputs = activity.inputs || {};
-        if (inputs.tv === tvInput.current && inputs.avr === avrInput) {
+        if (inputs.tv === tv.input && inputs.avr === avr.input) {
+          //          found = true;
           if (currentActivity !== activity.name) {
-            setCurrentDevice(activity.defaultDevice);
-            setCurrentActivity(activity.name);
+            setCurrentDevice(prev => activity.defaultDevice);
+            setCurrentActivity(prev => activity.name);
             break;
           }
         }
       }
-    }; // onMessage
-
-    for (const device of devices) {
-      switch (device.type) {
-        case "lgtv":
-          tvType = "lgtv";
-          MQTT.subscribe(`lgtv/${device.device}/status/power`, onMessage);
-          MQTT.subscribe(`lgtv/${device.device}/status/foregroundApp`, onMessage);
-          MQTT.subscribe(`lgtv/${device.device}/status/launchPoints`, onMessage);
-          break;
-        case "denon":
-          MQTT.subscribe(`denon/${device.device}/status/SI`, onMessage);
-          break;
-        default:
-          break;
-      }
+      //      if (!found) {
+      //        setCurrentDevice(tv.name);
+      //      }
     }
-    return () => {
-      for (const device of devices) {
-        switch (device.type) {
-          case "lgtv":
-            MQTT.unsubscribe(`lgtv/${device.device}/status/power`, onMessage);
-            MQTT.unsubscribe(`lgtv/${device.device}/status/foregroundApp`, onMessage);
-            MQTT.unsubscribe(`lgtv/${device.device}/status/launchPoints`, onMessage);
-            break;
-          case "denon":
-            MQTT.unsubscribe(`denon/${device.device}/status/SI`, onMessage);
-            break;
-          default:
-            break;
-        }
-      }
-    };
-  }, [power, currentDevice, currentActivity, avrInput]);
+  }, [activities, avr.input, currentActivity, tv.input, tv.power]);
+
+  const handleDeviceClick = device => {
+    setCurrentDevice(device);
+  };
+
+  const handleActivityClick = activity => {
+    setCurrentActivity(activity.name);
+    setCurrentDevice(activity.defaultDevice);
+    dispatchActivity({ macro: activity.macro });
+  };
 
   const renderDevice = () => {
     switch (currentDevice) {
@@ -150,11 +96,11 @@ const TheaterTab = ({ theater }) => {
       case "Harmony Hub":
         return <Harmony hub={deviceMap.harmony} />;
       case "LG TV":
+        console.log("deviceMap", deviceMap);
         if (!deviceMap.lgtv) {
-          console.log("deviceMap", deviceMap);
           return null;
         }
-        return <LGTV lgtv={lgtv} tvInput={tvInput} avrInput={avrInput} />;
+        return <LGTVControl config={deviceMap.lgtv} />;
       case "Apple TV":
         return <AppleTV device={deviceMap.appletv.device} />;
       default:
@@ -162,10 +108,6 @@ const TheaterTab = ({ theater }) => {
         return null;
     }
   };
-
-  if (startingActivity) {
-    return <div>Starting {startingActivity}</div>;
-  }
 
   return (
     <div style={{ overflow: "scroll", height: "100vh", paddingBottom: 300 }}>
@@ -192,9 +134,10 @@ const TheaterTab = ({ theater }) => {
       {renderDevice()}
 
       <div style={{ height: 10 }} />
-      <Audio device={denon.current} />
+      <Audio avr={avr} />
     </div>
   );
 };
 
+//
 export default TheaterTab;

@@ -31,11 +31,11 @@ const DashboardTab = ({ dashboard }) => {
       case "garagedoor":
         return <GarageDoorItem config={tile} />;
       case "fan":
-        return <FanItem name={tile.device} />;
+        return <FanItem name={tile.device} hub={tile.hub} />;
       case "dimmer":
-        return <DimmerItem name={tile.device} />;
+        return <DimmerItem name={tile.device} hub={tile.hub} />;
       case "switch":
-        return <SwitchItem name={tile.device} />;
+        return <SwitchItem name={tile.device} hub={tile.hub} />;
       case "macro":
         return <MacroItem name={tile.name} label={tile.label} />;
       default:

@@ -1,52 +1,47 @@
-import React, { useState, useEffect } from "react";
-import useConfig from "@/hooks/useConfig";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+  ____                            _   ____                  ___ _                  
+ / ___| __ _ _ __ __ _  __ _  ___| |_|  _ \  ___   ___  _ _|_ _| |_ ___ _ __ ___   
+| |  _ / _` | '__/ _` |/ _` |/ _ \ __| | | |/ _ \ / _ \| '__| || __/ _ \ '_ ` _ \  
+| |_| | (_| | | | (_| | (_| |  __/ |_| |_| | (_) | (_) | |  | || ||  __/ | | | | | 
+ \____|\__,_|_|  \__,_|\__, |\___|\__|____/ \___/ \___/|_| |___|\__\___|_| |_| |_| 
+                       |___/                                                       
+*/
+
+import React from "react";
+import { useContact } from "@/hooks/useThings";
 import { ListGroup } from "react-bootstrap";
 
-import MQTT from "@/lib/MQTT";
 
 const GarageDoorItem = ({ config }) => {
-  const Config = useConfig();
-  const devices = Array.isArray(config.devices) ? config.devices : [config.devices];
-  const preface = Config.mqtt.smartthings;
+  const devs = Array.isArray(config.devices) ? config.devices : [config.devices],
+    devices = {};
 
-  const [doorSensors, setDoorSensors] = useState({});
-
-  useEffect(() => {
-    const onStateChange = (topic, newState) => {
-      const newDoors = {};
-
-      for (const device of devices) {
-        if (topic.indexOf(device) !== -1) {
-          newDoors[device] = newState;
-        }
-      }
-      setDoorSensors(prev => ({ ...prev, ...newDoors }));
-    };
-
-    for (const device of devices) {
-      MQTT.subscribe(`${preface}/${device}/contact`, onStateChange);
-    }
-    return () => {
-      for (const device of devices) {
-        MQTT.unsubscribe(`${preface}/${device}/contact`, onStateChange);
-      }
-    };
-  }, [devices, preface]);
+  for (const d of devs) {
+    devices[d] = useContact(d, d.source);
+  }
 
   const doors = [];
   let open = false;
 
-  for (const k of Object.keys(doorSensors)) {
-    doors.push({ name: k.replace(/\s+Sensor/, ""), state: doorSensors[k] });
-    if (doorSensors[k] === "open") {
+  for (const k of Object.keys(devices)) {
+    doors.push({ ...devices[k], name: k.replace(/\s+Sensor/, "") });
+    if (devices[k].contact === "open") {
       open = true;
     }
   }
+
 
   let key = 0;
   return (
     <ListGroup.Item
       style={{
+        height: 80,
         flexDirection: "column",
         padding: 5,
         textAlign: "center",
@@ -56,8 +51,8 @@ const GarageDoorItem = ({ config }) => {
     >
       {doors.map(function(door) {
         return (
-          <div key={++key}>
-            <span style={{ fontWeight: "bold" }}>{door.name}</span> {door.state}
+          <div key={++key} style={{fontSize: 20}}>
+            <span style={{ fontWeight: "bold" }}>{door.name}</span> {door.contact}
           </div>
         );
       })}

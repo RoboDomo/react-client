@@ -1,3 +1,17 @@
+/*
+ _____     _     _      _    
+|_   _|_ _| |__ | | ___| |_  
+  | |/ _` | '_ \| |/ _ \ __| 
+  | | (_| | |_) | |  __/ |_  
+  |_|\__,_|_.__/|_|\___|\__| 
+                             
+ ____          _ _       _   _____ _ _       
+/ ___|_      _(_) |_ ___| |_|_   _(_) | ___  
+\___ \ \ /\ / / | __/ __| '_ \| | | | |/ _ \ 
+ ___) \ V  V /| | || (__| | | | | | | |  __/ 
+|____/ \_/\_/ |_|\__\___|_| |_|_| |_|_|\___| 
+*/
+
 import React from "react";
 
 import { useSwitch } from "@/hooks/useThings";
@@ -6,6 +20,7 @@ import Tile from "./Tile";
 import { TiLightbulb } from "react-icons/ti";
 
 const SwitchTile = ({ hub, name }) => {
+  console.warn(hub);
   const thing = useSwitch(name, hub);
   //  const thing = useSwitch(name);
 

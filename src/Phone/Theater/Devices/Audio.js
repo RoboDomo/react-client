@@ -1,106 +1,89 @@
-import React, { useState, useEffect } from "react";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ _____ _                _                 __     _             _ _        
+|_   _| |__   ___  __ _| |_ ___ _ __     / /    / \  _   _  __| (_) ___   
+  | | | '_ \ / _ \/ _` | __/ _ \ '__|   / /    / _ \| | | |/ _` | |/ _ \  
+  | | | | | |  __/ (_| | ||  __/ |     / /    / ___ \ |_| | (_| | | (_) | 
+  |_| |_| |_|\___|\__,_|\__\___|_|    /_/    /_/   \_\__,_|\__,_|_|\___/  
+*/
+
+import React, { useReducer } from "react";
 import useConfig from "@/hooks/useConfig";
 
 import { FaVolumeMute, FaVolumeUp, FaVolumeDown } from "react-icons/fa";
 import { ButtonGroup } from "react-bootstrap";
-import RemoteButton from "@/common/RemoteButton";
+import ActionButton from "@/common/ActionButton";
 
-import MQTT from "@/lib/MQTT";
+import denonReducer from "@/hooks/reducers/denonReducer";
 
-const AudioControl = ({ device }) => {
-  const Config = useConfig();
-  const [mute, setMute] = useState(false);
-  const [volume, setVolume] = useState(0);
-  const [center, setCenter] = useState(0);
-  const [dolby, setDolby] = useState(null);
-
-  const topic = `${Config.mqtt.denon}/${device.device}/status/`,
-    set_topic = topic.replace("status", "set");
-
-  const format = n => {
-    n = String(n / 10);
-    if (n.indexOf(".") === -1) {
-      n += ".0";
+const format = n => {
+  if (n === null) {
+    return 0;
+  }
+  if (typeof n === "number") {
+    if (n > 99) {
+      return n / 10;
     }
     return n;
+  }
+  if (n.length === 3) {
+    return Number(n) / 10;
+  }
+  return Number(n);
+};
+
+const AudioControl = ({ avr }) => {
+  const [, dispatch] = useReducer(denonReducer, { device: avr ? avr.device : null });
+  if (!avr) {
+    return null;
+  }
+
+  const button = (action, children, variant) => {
+    if (action === "mute") {
+      action = avr.mute ? "unmute" : "mute";
+    }
+
+    return (
+      <ActionButton variant={variant} dispatch={dispatch} action={action}>
+        {children}
+      </ActionButton>
+    );
   };
-
-  useEffect(() => {
-    const onMessage = (topic, message) => {
-      if (~topic.indexOf("MU")) {
-        setMute(message !== "OFF");
-      } else if (~topic.indexOf("MV")) {
-        setVolume(Number(message));
-      } else if (~topic.indexOf("MS")) {
-        setDolby(message);
-      } else if (~topic.indexOf("CVC")) {
-        setCenter(Number(message.length === 2 ? message + "0" : message));
-      }
-    };
-
-    MQTT.subscribe(topic + "MU", onMessage);
-    MQTT.subscribe(topic + "MV", onMessage);
-    MQTT.subscribe(topic + "MS", onMessage);
-    MQTT.subscribe(topic + "CVC", onMessage);
-
-    return () => {
-      MQTT.unsubscribe(topic + "MU", onMessage);
-      MQTT.unsubscribe(topic + "MV", onMessage);
-      MQTT.unsubscribe(topic + "MS", onMessage);
-      MQTT.unsubscribe(topic + "CVC", onMessage);
-    };
-  }, [topic]);
 
   return (
     <div style={{ textAlign: "center" }}>
-      {dolby}
       <div style={{ display: "flex" }}>
         <div style={{ flex: 1.5 }}>
-          Master Volume {format(volume)}
+          Master Volume {format(avr.masterVolume)}
           <ButtonGroup>
-            <RemoteButton
-              mini
-              variant={mute ? "danger" : "primary"}
-              topic={set_topic}
-              message={mute ? "MUOFF" : "MUON"}
-              name="mute"
-            >
-              <FaVolumeMute />
-            </RemoteButton>
-            <RemoteButton mini topic={set_topic} message="MVUP" name="volume-up">
-              <FaVolumeUp />
-            </RemoteButton>
-            <RemoteButton mini topic={set_topic} message="MVDOWN" name="volume-down">
-              <FaVolumeDown />
-            </RemoteButton>
+            {button("mute", <FaVolumeMute />, avr.mute ? "danger" : "primary")}
+            {button("masterup", <FaVolumeUp />)}
+            {button("masterdown", <FaVolumeDown />)}
           </ButtonGroup>
         </div>
 
         <div style={{ flex: 1 }}>
-          Center {format(center - 500)}
+          Center {format(avr.centerVolume)}
           <ButtonGroup>
-            <RemoteButton mini topic={set_topic} message="CVC UP" name="center-up">
-              <FaVolumeUp />
-            </RemoteButton>
-            <RemoteButton mini topic={set_topic} message="CVC DOWN" name="center-down">
-              <FaVolumeDown />
-            </RemoteButton>
+            {button("centerup", <FaVolumeUp />)}
+            {button("centerdown", <FaVolumeDown />)}
           </ButtonGroup>
         </div>
-
+      </div>
+      <div style={{ textAlign: "center" }}>
         <div style={{ flex: 1 }}>
-          Mode
-          <br />
-          <ButtonGroup vertical>
-            <RemoteButton topic={set_topic} message="MSAUTO" name="auto">
-              Auto
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="MSMOVIE" name="movie">
-              Movie
-            </RemoteButton>
-            <RemoteButton topic={set_topic} message="MSMUSIC" name="music">
-              Music
-            </RemoteButton>
+          <div style={{ textAlign: "center", width: "100%", marginTop: 16 }}>
+            {avr.surroundMode}
+          </div>
+          <ButtonGroup>
+            {button("auto", "Auto")}
+            {button("movie", "Movie")}
+            {button("music", "Music")}
           </ButtonGroup>
         </div>
       </div>
@@ -108,4 +91,5 @@ const AudioControl = ({ device }) => {
   );
 };
 
+//
 export default AudioControl;

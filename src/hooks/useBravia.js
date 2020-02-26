@@ -34,6 +34,9 @@ const useBravia = config => {
   };
 
   useEffect(() => {
+    if (!config || !config.device || config.device === "") {
+      return;
+    }
     const hostname = config.device;
     const status_topic = Config.mqtt.bravia + "/" + hostname + "/status/";
 
@@ -42,6 +45,7 @@ const useBravia = config => {
     MQTT.subscribe(status_topic + "input", handleInput);
     MQTT.subscribe(status_topic + "power", handlePower);
     MQTT.subscribe(status_topic + "volume", handleVolume);
+
     return () => {
       MQTT.unsubscribe(status_topic + "appsList", handleAppsList);
       MQTT.unsubscribe(status_topic + "appsMap", handleAppsMap);
@@ -49,7 +53,11 @@ const useBravia = config => {
       MQTT.unsubscribe(status_topic + "power", handlePower);
       MQTT.unsubscribe(status_topic + "volume", handleVolume);
     };
-  }, [Config.mqtt.bravia, config.device]);
+  }, [Config.mqtt.bravia, config]);
+
+  if (!config || !config.device || config.device === "") {
+    return {};
+  }
 
   return {
     ...config,

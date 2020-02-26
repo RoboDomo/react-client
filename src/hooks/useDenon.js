@@ -56,6 +56,9 @@ const useDenon = device => {
     };
   }, [Config.mqtt.denon, setMute, topic]);
 
+  if (!device || device === "") {
+    return {};
+  }
   return {
     device: device.device,
     get power() {

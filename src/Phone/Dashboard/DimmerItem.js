@@ -1,67 +1,45 @@
-import React, { useState, useEffect } from "react";
-import useConfig from "@/hooks/useConfig";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
+                               
+ ____  _                              ___ _                  
+|  _ \(_)_ __ ___  _ __ ___   ___ _ _|_ _| |_ ___ _ __ ___   
+| | | | | '_ ` _ \| '_ ` _ \ / _ \ '__| || __/ _ \ '_ ` _ \  
+| |_| | | | | | | | | | | | |  __/ |  | || ||  __/ | | | | | 
+|____/|_|_| |_| |_|_| |_| |_|\___|_| |___|\__\___|_| |_| |_| 
+                                                             
+*/
+
+import React from "react";
 import { Badge, ListGroup } from "react-bootstrap";
-
-import MQTT from "@/lib/MQTT";
-
+import { useDimmer } from "@/hooks/useThings";
 import { TiAdjustBrightness } from "react-icons/ti";
 
-const DimmerItem = ({ name }) => {
-  const Config = useConfig();
-  const status_topic = `${Config.mqtt.smartthings}/${name}/`,
-    status_topic_length = status_topic.length,
-    set_topic = status_topic;
-
-  const [level, setLevel] = useState(0);
-  const [power, setPower] = useState("off");
-
-  useEffect(() => {
-    const onStateChange = (topic, newState) => {
-      const key = topic.substr(status_topic_length);
-      switch (key) {
-        case "switch":
-          setPower(newState);
-          break;
-        case "level":
-          setLevel(newState);
-          break;
-        default:
-          console.log("invalid state", key);
-          break;
-      }
-    };
-
-    MQTT.subscribe(status_topic + "switch", onStateChange);
-    MQTT.subscribe(status_topic + "level", onStateChange);
-
-    return () => {
-      MQTT.unsubscribe(status_topic + "switch", onStateChange);
-      MQTT.unsubscribe(status_topic + "level", onStateChange);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+const DimmerItem = ({ hub, name }) => {
+  const dimmer = useDimmer(name, hub);
 
   const onClick = e => {
     e.stopPropagation();
 
-    if (power === "on") {
-      setPower("off");
-      MQTT.publish(set_topic + "switch/set", "off");
+    if (dimmer.switch === "on") {
+      dimmer.switch = "off";
     } else {
-      setPower("on");
-      MQTT.publish(set_topic + "switch/set", "on");
+      dimmer.switch = "on";
     }
   };
 
   const style =
-    power === "off"
+    dimmer.switch === "off"
       ? {
           color: undefined,
           value: "Off",
         }
       : {
           color: "yellow",
-          value: `${level}%`,
+          value: `${dimmer.level}%`,
         };
 
   return (

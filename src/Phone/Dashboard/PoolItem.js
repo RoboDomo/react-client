@@ -1,53 +1,29 @@
-import React, { useState, useEffect } from "react";
-import useConfig from "@/hooks/useConfig";
+/*
+ ____  _                       
+|  _ \| |__   ___  _ __   ___  
+| |_) | '_ \ / _ \| '_ \ / _ \ 
+|  __/| | | | (_) | | | |  __/ 
+|_|   |_| |_|\___/|_| |_|\___| 
 
+ ____             _ ___ _                  
+|  _ \ ___   ___ | |_ _| |_ ___ _ __ ___   
+| |_) / _ \ / _ \| || || __/ _ \ '_ ` _ \  
+|  __/ (_) | (_) | || || ||  __/ | | | | | 
+|_|   \___/ \___/|_|___|\__\___|_| |_| |_| 
+                                           
+*/
+
+import React from "react";
+import useAutelis from "@/hooks/useAutelis";
 import { ListGroup, Badge } from "react-bootstrap";
 
-import MQTT from "@/lib/MQTT";
-
-const topics = [
-  "pump",
-  "cleaner",
-  "poolTemp",
-  "poolHeat",
-  "poolSetpoint",
-  "solarHeat",
-  "solarTemp",
-];
-
 const PoolItem = ({ device }) => {
-  const Config = useConfig();
-  const [state, setState] = useState({ pump: "off" });
-  const controller = Config[device],
-    deviceMap = controller.deviceMap,
-    status_topic = Config.mqtt[device] + "/status/",
-    status_topic_length = status_topic.length;
-
-  useEffect(() => {
-    const onStateChange = (topic, newState) => {
-      const newValue = {},
-        what = topic.substr(status_topic_length),
-        key = deviceMap.backward[what] || what;
-
-      newValue[key] = newState;
-      setState(prev => ({ ...prev, ...newValue }));
-    };
-    topics.forEach(topic => {
-      const device = deviceMap.forward[topic] || topic;
-      MQTT.subscribe(status_topic + device, onStateChange);
-    });
-    return () => {
-      topics.forEach(topic => {
-        const device = deviceMap.forward[topic] || topic;
-        MQTT.unsubscribe(status_topic + device, onStateChange);
-      });
-    };
-  }, [deviceMap.backward, deviceMap.forward, status_topic, status_topic_length]);
+  const autelis = useAutelis();
 
   const renderControl = (ndx, text, big) => {
-    const thingState = (state[ndx] || "off").toLowerCase();
+    const thingState = autelis[ndx] || "off";
 
-    if (thingState === "off") {
+    if (!thingState || thingState === "off" || !autelis.pump) {
       return null;
     }
     if (big) {
@@ -63,23 +39,23 @@ const PoolItem = ({ device }) => {
     );
   };
 
-  const on = state.pump.toLowerCase() === "on",
-    variant = on ? (state.poolHeat === "enabled" ? "danger" : "success") : undefined;
+  const on = autelis.pump,
+    variant = on ? (autelis.poolHeat === "enabled" ? "danger" : "success") : undefined;
 
   if (on) {
     return (
       <ListGroup.Item variant={variant} style={{ display: "flex" }}>
-        <div style={{ flex: 1, fontSize: 40 }}>Pool {state.poolTemp}&deg;F</div>
+        <div style={{ flex: 1, fontSize: 40 }}>Pool {autelis.poolTemp}&deg;F</div>
         <div>
           {renderControl("pump", "Filter")}
           {renderControl("cleaner", "Cleaner")}
           {renderControl("waterfall", "Waterfall")}
-          {renderControl("poolHeat", "Pool Heat " + state.poolSetpoint)}
+          {renderControl("poolHeat", "Pool Heat " + autelis.poolSetpoint)}
           {renderControl(
             "solarHeat",
             "Solar " +
-              (state.solarHeat === "enabled" || state.solarHeat === "on"
-                ? state.solarTemp + "°F"
+              (autelis.solarHeat === "enabled" || autelis.solarHeat === "on"
+                ? autelis.solarTemp + "°F"
                 : "off")
           )}
         </div>

@@ -7,6 +7,10 @@ const useLGTV = config => {
   const [foregroundApp, setForegroundApp] = useState(null);
   const [launchPoints, setLaunchPoints] = useState(null);
 
+  if (!config || !config.device) {
+    return {};
+  }
+
   const handlePower = (topic, message) => {
     if (message === true || message === false) {
       setPower(message ? "on" : "off");
