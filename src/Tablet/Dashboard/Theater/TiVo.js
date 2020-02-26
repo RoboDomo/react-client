@@ -8,10 +8,19 @@ const TiVo = ({ device }) => {
   const tvguide = tivo.guide;
 
   const info = tvguide.channels[tivo.channel];
+  console.log("info", info);
   if (!info) {
     return null;
   }
-
+  if (!info.logo || !info.logo.URL) {
+    return (
+      <>
+        <div style={{ marginBottom: 8 }}>
+          {tivo.channel} {info.name}
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <Image style={{ width: 64, height: "auto" }} src={info.logo.URL} />
