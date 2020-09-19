@@ -36,7 +36,7 @@ const TiVoControl = ({ config }) => {
     [, dispatch] = useReducer(tivoReducer, { device: config.device });
 
   const g = tivo.guide.channels[tivo.channel];
-  if (!g) {
+  if (!g || !g.logo) {
     return null;
   }
 
@@ -44,7 +44,7 @@ const TiVoControl = ({ config }) => {
     <>
       <h4>
         Channel: {tivo.channel} {g.name}{" "}
-        <img style={{ width: 30, height: 30 }} src={g.logo.URL} alt={g.name} />
+        <img style={{ width: 30, height: 30 }} src={g.logo.URL||""} alt={g.name} />
       </h4>
       <Row
         style={{

@@ -42,7 +42,7 @@ const TheaterTab = ({ style, theater }) => {
   }
   const avr = useDenon(deviceMap.denon);
   const lgtv = useLGTV(deviceMap.lgtv);
-  const bravia = useLGTV(deviceMap.bravia);
+  const bravia = useBravia(deviceMap.bravia);
   const tv = lgtv.device ? lgtv : bravia;
 
   const handleDeviceClick = device => {
