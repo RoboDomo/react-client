@@ -24,7 +24,8 @@ import braviaReducer from "@/hooks/reducers/braviaReducer";
 import ActionButton from "@/common/ActionButton";
 
 const BraviaControl = ({ config }) => {
-  const tv = useBravia(config),
+  console.log(config);
+  const tv = useBravia(config || {}),
     [, dispatch] = useReducer(braviaReducer, { device: config.device });
 
   const renderJoystick = () => {

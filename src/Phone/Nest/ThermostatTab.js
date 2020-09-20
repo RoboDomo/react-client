@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import useConfig from "@/hooks/useConfig";
+import useWeather from "@/hooks/useWeather";
+import useThermostat from "@/hooks/useThermostat";
+import thermostatReducer from "@/hooks/reducers/thermostatReducer";
 
 import {
   ButtonGroup,
@@ -14,99 +17,62 @@ import { FaChevronUp, FaChevronDown, FaChevronRight } from "react-icons/fa";
 
 import Thermostat from "react-nest-thermostat";
 
-import MQTT from "@/lib/MQTT";
-
 const ThermostatTab = ({ thermostat }) => {
-  const Config = useConfig();
   const device = thermostat.device;
 
-  const thermostat_status_topic = Config.mqtt.nest + "/" + device + "/status/",
-    thermostat_status_topic_length = thermostat_status_topic.length,
-    set_topic = thermostat_status_topic.replace("status", "set");
+  const Config = useConfig(),
+        metric = Config.metric;
 
-  const weather_status_topic = useRef(null);
-
-  const [thermoState, setThermoState] = useState({}),
-    [weatherState, setWeatherState] = useState({});
-
-  const thermostatTopics = [
-    "device",
-    "name",
-    "structure_name",
-    "postal_code",
-    "away",
-    "ambient_temperature_f",
-    "target_temperature_f",
-    "hvac_state",
-    "has_leaf",
-    "humidity",
-    "time_to_target",
-    "hvac_mode",
-  ];
-  const weatherTopics = ["now", "forecast"];
-
-  const onWeatherChange = (topic, newState) => {
-    const key = topic.substr(weather_status_topic.current.length);
-    const s = {};
-    s[key] = newState;
-    setWeatherState(prev => ({ ...prev, ...s }));
-  };
-
-  const onThermostatChange = (topic, newState) => {
-    const key = topic.substr(thermostat_status_topic_length);
-    const s = {};
-    s[key] = newState;
-    setThermoState(prev => ({ ...prev, ...s }));
-  };
-
-  useEffect(() => {
-    for (const topic of thermostatTopics) {
-      MQTT.subscribe(thermostat_status_topic + topic, onThermostatChange);
-    }
-    return () => {
-      for (const topic of thermostatTopics) {
-        MQTT.unsubscribe(thermostat_status_topic + topic, onThermostatChange);
-      }
-      if (weather_status_topic.current) {
-        const t = weather_status_topic.current;
-        for (const w of weatherTopics) {
-          MQTT.unsubscribe(t + w, onWeatherChange);
-        }
-      }
-    };
-  }, [onThermostatChange, thermostatTopics, thermostat_status_topic, weatherTopics]);
+  const thermoState = useThermostat(device);
+  const weather = useWeather(thermoState ? thermoState.postal_code : null),
+        { now } = weather;
 
   const hvacModeChange = mode => {
-    MQTT.publish(set_topic + "/hvac_mode", mode);
-  };
-
-  const adjustTemperature = temp => {
-    const thermostat = thermoState;
-    if (thermostat) {
-      MQTT.publish(set_topic + "/target_temperature_f", thermostat.target_temperature_f + temp);
-    }
+    try {
+      dispatch({ type: "hvac_mode", value: mode });
+    } catch (e) {}
   };
 
   const setTargetTemperature = temp => {
-    MQTT.publish(set_topic + "/target_temperature_f", temp);
+    try {
+      dispatch({ type: "target_temp", value: temp });
+    } catch (e) {}
+  };
+
+  const adjustTemperature = temp => {
+    const newVal = Number(thermoState.target_temperature_f) + temp;
+    try {
+      dispatch({ type: "target_temp", value: newVal });
+    } catch (e) {}
+  };
+
+  const adjustTemperatureButton = delta => {
+    const d = metric ? parseInt((10 * delta) / 1.8) / 10 : delta;
+    return (
+      <Button
+        onClick={() => {
+          adjustTemperature(d);
+        }}
+      >
+        {delta < 0 ? <FaChevronDown /> : <FaChevronUp />}
+        {d}
+      </Button>
+    );
   };
 
   const render = () => {
-    const thermostat = thermoState,
-      weather = weatherState,
-      now = weather ? weather.now : {};
 
-    if (!thermostat || !now) {
+    if (!thermoState || !thermoState.away) {
       return null;
     }
 
     const target = n => {
       let icon = <FaChevronRight />,
-        disabled = false;
+          disabled = false;
 
-      if (thermostat.target_temperature_f > n) {
+      if (thermoState.target_temperature_f > n) {
         icon = <FaChevronDown />;
-      } else if (thermostat.target_temperature_f < n) {
+      } else if (thermoState.target_temperature_f < n) {
         icon = <FaChevronUp />;
       } else {
         icon = <FaChevronRight />;
@@ -118,45 +84,49 @@ const ThermostatTab = ({ thermostat }) => {
         </Button>
       );
     };
+
     const renderTargets = () => {
       switch (thermoState.hvac_mode) {
-        case "Off":
-        default:
-          return null;
-        case "heat":
-          return (
-            <ButtonGroup vertical style={{ width: "100%" }}>
-              {target(78)}
-              {target(77)}
-              {target(76)}
-              {target(75)}
-              {target(74)}
-              {target(73)}
-              {target(72)}
-              {target(71)}
-              {target(70)}
-              {target(69)}
-            </ButtonGroup>
-          );
-        case "cool":
-          return (
-            <ButtonGroup vertical style={{ width: "100%" }}>
-              {target(82)}
-              {target(81)}
-              {target(80)}
-              {target(79)}
-              {target(79)}
-              {target(77)}
-              {target(76)}
-              {target(75)}
-              {target(74)}
-              {target(73)}
-            </ButtonGroup>
-          );
+      case "Off":
+      default:
+        return null;
+      case "heat":
+        return (
+          <ButtonGroup vertical style={{ width: "100%" }}>
+            {target(78)}
+            {target(77)}
+            {target(76)}
+            {target(75)}
+            {target(74)}
+            {target(73)}
+            {target(72)}
+            {target(71)}
+            {target(70)}
+            {target(69)}
+          </ButtonGroup>
+        );
+      case "cool":
+        return (
+          <ButtonGroup vertical style={{ width: "100%" }}>
+            {target(82)}
+            {target(81)}
+            {target(80)}
+            {target(79)}
+            {target(79)}
+            {target(77)}
+            {target(76)}
+            {target(75)}
+            {target(74)}
+            {target(73)}
+          </ButtonGroup>
+        );
       }
     };
 
     const bwidth = window.innerWidth / 5;
+
+    const away = Boolean(thermoState.away !== "home");
+    
     return (
       <div
         style={{
@@ -164,19 +134,20 @@ const ThermostatTab = ({ thermostat }) => {
           height: "100vh",
           paddingBottom: 300,
           textAlign: "center",
+          marginTop: 20,
         }}
       >
         <Thermostat
           style={{ textAlign: "center " }}
           width="300px"
           height="300px"
-          away={Boolean(thermostat.away !== "home")}
-          ambientTemperature={thermostat.ambient_temperature_f}
-          targetTemperature={thermostat.target_temperature_f}
-          hvacMode={thermostat.hvac_state}
-          leaf={thermostat.has_leaf}
+          away={away}
+          ambientTemperature={thermoState.ambient_temperature_f}
+          targetTemperature={thermoState.target_temperature_f}
+          hvacMode={thermoState.hvac_state}
+          leaf={thermoState.has_leaf}
         />
-        <ButtonGroup style={{ marginBottom: 8 }}>
+        <ButtonGroup style={{ marginBottom: 8, marginTop: 20 }}>
           <Button onClick={() => adjustTemperature(-3)}>
             <FaChevronDown />
             &nbsp; 3 &deg;
@@ -207,7 +178,7 @@ const ThermostatTab = ({ thermostat }) => {
           type="radio"
           size="lg"
           name="hvac"
-          value={thermostat.hvac_mode}
+          value={thermoState.hvac_mode}
         >
           <ToggleButton style={{ width: bwidth, fontSize: 14 }} value="off">
             Off
@@ -225,74 +196,10 @@ const ThermostatTab = ({ thermostat }) => {
             Eco
           </ToggleButton>
         </ToggleButtonGroup>
-        <div style={{ display: "flex" }}>
-          <div style={{ flex: 1 }}>
-            <ListGroup>
-              <ListGroupItem>
-                Presence
-                <span style={{ float: "right" }}>{thermostat.away.toUpperCase()}</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                Inside Temp
-                <span style={{ float: "right" }}>{thermostat.ambient_temperature_f}&deg;F</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                Humidity
-                <span style={{ float: "right" }}>{thermostat.humidity}%</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                Mode
-                <span style={{ float: "right" }}>{thermostat.hvac_mode}</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                Operating State
-                <span style={{ float: "right" }}>{thermostat.hvac_state}</span>
-              </ListGroupItem>
-            </ListGroup>
-            <ListGroup>
-              <ListGroupItem>
-                {thermostat.structure_name}
-                <span style={{ float: "right" }}>{thermostat.postal_code}</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                Outside Temp
-                <span style={{ float: "right" }}>{now.current_temperature}&deg;F</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                Outside Humidity
-                <span style={{ float: "right" }}>{now.current_humidity}%</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                <span style={{ float: "right" }}>{now.conditions}</span>
-              </ListGroupItem>
-            </ListGroup>
-          </div>
-          <div style={{ flex: 1 }}>
-            <ListGroup>
-              <ListGroupItem>
-                Target Temp
-                <span style={{ float: "right" }}>{thermostat.target_temperature_f}&deg;F</span>
-              </ListGroupItem>
-              <ListGroupItem>
-                Time To Target
-                <span style={{ float: "right" }}>{thermostat.time_to_target}</span>
-              </ListGroupItem>
-            </ListGroup>
-            {renderTargets()}
-          </div>
-        </div>
       </div>
     );
   };
 
-  if (!weather_status_topic.current && thermoState.postal_code) {
-    const t = (weather_status_topic.current = `${Config.mqtt.weather}/${
-      thermoState.postal_code
-    }/status/`);
-    for (const w of weatherTopics) {
-      MQTT.subscribe(t + w, onWeatherChange);
-    }
-  }
   return render();
 };
 

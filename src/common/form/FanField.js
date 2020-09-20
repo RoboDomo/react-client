@@ -15,6 +15,29 @@ const FanField = ({ label, name, toggled, value, onChange }) => {
   styles.medium = toggled && value <= 66 && value > 33 ? "dark" : "primary";
   styles.high = toggled && value > 66 ? "dark" : "primary";
 
+  if (window.innerWidth < 400) {
+    return (
+      <>
+        <div style={{ marginTop: 10, whitespace: 'nowrap',fontSize: 20}}>{label}</div>
+        <div style={{ display: "flex", marginTop: 10 }}>
+          <ButtonGroup>
+            <Button variant={styles.on} onClick={() => onChange(name, "off")}>
+              Off
+            </Button>
+            <Button variant={styles.low} onClick={() => onChange(name, "low")}>
+              Low
+            </Button>
+            <Button variant={styles.medium} onClick={() => onChange(name, "medium")}>
+              Medium
+            </Button>
+            <Button variant={styles.high} onClick={() => onChange(name, "high")}>
+              High
+            </Button>
+          </ButtonGroup>
+        </div>
+      </>
+    );
+  }
   return (
     <div style={{ display: "flex", marginTop: 10 }}>
       <div style={{ flex: 1, marginTop: 12 }}>{label}</div>

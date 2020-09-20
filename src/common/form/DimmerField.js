@@ -22,6 +22,28 @@ const DimmerField = ({ label, name, value, toggled, onToggle, onValueChange }) =
     }
   };
 
+  if (window.innerWidth < 400) {
+    return (
+      <>
+        <div style={{ marginTop: 10, whitespace: 'nowrap',fontSize: 20}}>{label}</div>
+        <div style={{ display: "flex" }}>
+          <div style={{ whiteSpace: "nowrap", display: "flex" }}>
+            <Toggle active={toggled} onClick={handleToggle} style={{ flex: 1, marginRight: 20 }} />
+            <div style={{ flex: 1, marginTop: 10 }}>
+              <ReactBootstrapSlider
+                style={{ flex: 1, paddingTop: 8 }}
+                value={value || 0}
+                step={1}
+                slideStop={handleSliderChange}
+                min={1}
+                max={100}
+              />
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
   return (
     <div style={{ display: "flex", marginTop: 10 }}>
       <div style={{ marginTop: 10, flex: 1 }}>{label}</div>

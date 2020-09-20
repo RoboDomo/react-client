@@ -24,6 +24,7 @@ const Nest = () => {
       unmountOnExit
     >
       {Config.nest.thermostats.map(thermostat => {
+        console.log(thermostat);
         return (
           <Tab title={thermostat.name} eventKey={thermostat.name} key={thermostat.name}>
             <ThermostatTab thermostat={thermostat} />

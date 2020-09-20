@@ -1,18 +1,18 @@
 /*
- ____  _                       
-|  _ \| |__   ___  _ __   ___  
-| |_) | '_ \ / _ \| '_ \ / _ \ 
-|  __/| | | | (_) | | | |  __/ 
-|_|   |_| |_|\___/|_| |_|\___| 
-                               
- __  __       _       ____                            
-|  \/  | __ _(_)_ __ / ___|  ___ _ __ ___  ___ _ __   
-| |\/| |/ _` | | '_ \\___ \ / __| '__/ _ \/ _ \ '_ \  
-| |  | | (_| | | | | |___) | (__| | |  __/  __/ | | | 
-|_|  |_|\__,_|_|_| |_|____/ \___|_|  \___|\___|_| |_| 
+  ____  _                       
+  |  _ \| |__   ___  _ __   ___  
+  | |_) | '_ \ / _ \| '_ \ / _ \ 
+  |  __/| | | | (_) | | | |  __/ 
+  |_|   |_| |_|\___/|_| |_|\___| 
+  
+  __  __       _       ____                            
+  |  \/  | __ _(_)_ __ / ___|  ___ _ __ ___  ___ _ __   
+  | |\/| |/ _` | | '_ \\___ \ / __| '__/ _ \/ _ \ '_ \  
+  | |  | | (_| | | | | |___) | (__| | |  __/  __/ | | | 
+  |_|  |_|\__,_|_|_| |_|____/ \___|_|  \___|\___|_| |_| 
 */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { Navbar, Nav, TabContainer, TabContent, TabPane } from "react-bootstrap";
 
@@ -27,14 +27,18 @@ import Weather from "Phone/Weather/Weather";
 import Nest from "Phone/Nest/Nest";
 import Sensors from "Phone/Sensors/Sensors";
 import Autelis from "Phone/Autelis/Autelis";
+import SmartThings from "Phone/SmartThings/SmartThings";
 
 const LOCALSTORAGE_KEY = "phoneTabState";
 
+import tabInfo from "./tabs";
+
 const style = {
   nav: {
-    width: window.innerWidth / 7 - 8,
+    width: window.innerWidth / 7 - 4
   },
 };
+
 /**
  * Phone Top Level App (Main) Screen
  */
@@ -45,11 +49,25 @@ const MainScreen = () => {
     window.location.reload();
   };
 
+  useEffect(() => {
+    window.addEventListener(
+      "hashchange",
+      () => {
+        const hash = window.location.hash.substr(1),
+              info = tabInfo[hash];
+        localStorage.setItem(LOCALSTORAGE_KEY, info);
+        setActiveTab(info);
+      },
+      false
+    );
+  }, []);
+
   return (
-    <div style={{ marginTop: 0 }}>
+    <div style={{ marginTop: 0, width: '100%' }}>
       <TabContainer
-        activeKey={parseInt(activeTab, 10)}
+        activeKey={parseInt(activeTab, 20)}
         id="mainTabs"
+        style={{ width: '100%' }}
         variant="pills"
         mountOnEnter
         unmountOnExit
@@ -64,13 +82,15 @@ const MainScreen = () => {
           className="justify-content-between"
           bg="dark"
           variant="dark"
-          fixed="bottom"
+          style={{marginBottom: 4}}
+          fixed="top"
           onSelect={tab => {
+            window.location.hash = "#" + tabInfo[tab];
             localStorage.setItem(LOCALSTORAGE_KEY, tab);
             setActiveTab(tab);
           }}
         >
-          <Nav justify fill variant="tabs" defaultActiveKey={activeTab}>
+          <Nav justify fill variant="pills" defaultActiveKey={activeTab}>
             <Nav.Item style={style.nav}>
               <Nav.Link eventKey={1} style={{ margin: 0 }}>
                 <MdDashboard />
@@ -108,7 +128,7 @@ const MainScreen = () => {
             </Nav.Item>
           </Nav>
         </Navbar>
-        <TabContent>
+        <TabContent style={{marginTop: 8}}>
           <TabPane eventKey={1}>
             <Dashboard />
           </TabPane>
@@ -127,7 +147,9 @@ const MainScreen = () => {
           <TabPane eventKey={6}>
             <Autelis />
           </TabPane>
-          <TabPane eventKey={7}>Things</TabPane>
+          <TabPane eventKey={7}>
+            <SmartThings/>
+          </TabPane>
         </TabContent>
       </TabContainer>
     </div>

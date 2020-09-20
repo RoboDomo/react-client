@@ -1,49 +1,128 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import useConfig from "@/hooks/useConfig";
 
-import MQTT from "@/lib/MQTT";
+import {
+  useContact,
+  useMotion,
+  useBattery,
+  useTemperature,
+  useIlluminance,
+  useHumidity,
+} from "@/hooks/useThings";
+import useThermostat from "@/hooks/useThermostat";
 
-import { Badge, Card } from "react-bootstrap";
+import { Row, Col, Card } from "react-bootstrap";
 
 const SensorsTab = () => {
   const Config = useConfig();
-  const [sensors, setSensors] = useState({});
-  const types = ["contact", "motion", "battery", "temperature", "illuminance", "humidity"];
+
+  const sensors = useRef({
+    contact: {},
+    motion: {},
+    battery: {},
+    temperature: {},
+    illuminance: {},
+    humidity: {},
+  });
+
+  const clearSensors = () => {
+    sensors.current.contact = {};
+    sensors.current.motion = {};
+    sensors.current.battery = {};
+    sensors.current.temperature = {};
+    sensors.current.illuminance = {};
+    sensors.current.humidity = {};
+  };
+
+  useEffect(() => {
+    return () => {
+      clearSensors();
+      console.log("Sensors cleared");
+    };
+  }, []);
 
   if (!Config || !Array.isArray(Config.sensors)) {
     return null;
   }
+  const metric = Config.metric;
 
-  const onStateChange = (topic, newState) => {
-    const s = {};
-    s[topic] = newState;
-    setSensors(prev => ({ ...prev, ...s }));
-  };
-
-  useEffect(() => {
-    for (const sensor of Config.sensors) {
-      MQTT.subscribe(sensor.topic, onStateChange);
-    }
-    return () => {
-      for (const sensor of Config.sensors) {
-        MQTT.unsubscribe(sensor.topic, onStateChange);
+  for (const sensor of Config.sensors) {
+    switch (sensor.type) {
+    case "contact":
+      sensors.current.contact[sensor.name] = useContact(
+        sensor.device || sensor.name,
+        sensor.source,
+        sensor.key
+      );
+      break;
+    case "motion":
+      sensors.current.motion[sensor.name] = useMotion(
+        sensor.device || sensor.name,
+        sensor.source,
+        sensor.key
+      );
+      break;
+    case "battery":
+      sensors.current.battery[sensor.name] = useBattery(
+        sensor.device || sensor.name,
+        sensor.source,
+        sensor.key
+      );
+      break;
+    case "temperature":
+      sensors.current.temperature[sensor.name] = useTemperature(
+        sensor.device || sensor.name,
+        sensor.source,
+        sensor.key
+      );
+      break;
+    case "illuminance":
+      sensors.current.illuminance[sensor.name] = useIlluminance(
+        sensor.device || sensor.name,
+        sensor.source,
+        sensor.key
+      );
+      break;
+    case "humidity":
+      if (sensor.source === "nest") {
+        sensors.current.humidity[sensor.name] = useThermostat(
+          sensor.device || sensor.name,
+          sensor.key
+        );
+      } else {
+        sensors.current.humidity[sensor.name] = useHumidity(
+          sensor.device || sensor.name,
+          sensor.source,
+          sensor.key
+        );
       }
-    };
-  }, [Config.sensors]);
+      break;
+    default:
+      break;
+    }
+  }
 
   const renderType = type => {
     let key = 0;
 
-    return Config.sensors.map(sensor => {
-      if (sensor.type !== type) {
+    const m = [],
+          h = sensors.current[type];
+
+    for (const s of Object.keys(h)) {
+      m.push(h[s]);
+    }
+
+    return m.map(sensor => {
+      if (!sensor) {
         return null;
       }
+
       return (
         <div key={"type" + key++}>
           {sensor.name}
-          <Badge variant="secondary" className="float-right">
-            {sensors[sensor.topic]}
-          </Badge>
+          <span style={{ float: "right" }}>
+            {metric && sensor.metric ? sensor.metric : sensor.formatted}
+          </span>
         </div>
       );
     });
@@ -51,32 +130,34 @@ const SensorsTab = () => {
 
   const renderCard = type => {
     return (
-      <div style={{ padding: 10, marginTop: 10, fontSize: 18 }}>
+      <Col sm={4} style={{ marginTop: 20 }}>
         <Card>
           <Card.Header>{type.toUpperCase()}</Card.Header>
           <Card.Body>{renderType(type)}</Card.Body>
         </Card>
-      </div>
+      </Col>
     );
   };
 
-  let col = 0;
   return (
-    <div
-      style={{
-        overflow: "scroll",
-        height: "100vh",
-        paddingBottom: 300,
-      }}
-    >
-      {renderCard(types[col++])}
-      {renderCard(types[col++])}
-      {renderCard(types[col++])}
-      {renderCard(types[col++])}
-      {renderCard(types[col++])}
-      {renderCard(types[col++])}
+    <div style={{
+      border: "6px inset darkgrey",
+      backgroundColor: '#2f2f2f',
+      height: '90vh',
+      paddingTop: 10,
+      overflow: 'scroll',
+      marginBottom: 10,
+      paddingBottom: 300
+    }}>
+    {renderCard("contact")}
+    {renderCard("motion")}
+    {renderCard("battery")}
+    {renderCard("temperature")}
+    {renderCard("illuminance")}
+    {renderCard("humidity")}
     </div>
   );
 };
 
+//
 export default SensorsTab;

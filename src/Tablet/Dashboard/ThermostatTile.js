@@ -38,7 +38,7 @@ const ThermostatTile = ({ device }) => {
   const ambient = Number(thermostat.ambient_temperature_f),
     target = Number(thermostat.target_temperature_f);
 
-  if (thermostat.hvac_state === "off") {
+  if (thermostat.hvac_state === "offx") {
     return (
       <Tile width={2} height={2} onClick="nest">
         <div

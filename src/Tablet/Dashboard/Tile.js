@@ -31,10 +31,12 @@ const Tile = ({
   return (
     <div
       style={{
+        borderRadius: 8,
         backgroundColor: backgroundColor,
         color: color,
-        width: width * 128,
-        height: height * 128,
+        width: width * 128 - 4,
+        height: height * 128 - 4,
+        margin: 2,
         border: pressed ? "4px inset white" : "4px outset white",
         gridColumnEnd: "span " + width,
         gridRowEnd: "span " + height,

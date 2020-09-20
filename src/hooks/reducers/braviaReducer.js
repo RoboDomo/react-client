@@ -123,8 +123,9 @@ const codes = [
 const commandMap = (() => {
   const m = {};
   for (const code of codes) {
-    m[code.toLowerCase] = code;
+    m[code.toLowerCase()] = code;
   }
+  return m;
 })();
 
 export default (state, action) => {
@@ -137,7 +138,7 @@ export default (state, action) => {
   const command = commandMap[action.type.toLowerCase()];
   if (command) {
     MQTT.publish(set_topic, command);
-    return;
+    return state;
   }
 
   switch (type.toLowerCase) {

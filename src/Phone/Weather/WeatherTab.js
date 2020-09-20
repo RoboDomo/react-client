@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+
+import Clock from "@/common/Clock";
 import useConfig from "@/hooks/useConfig";
+import useWeather from "@/hooks/useWeather";
+import Temperature from "@/common/Temperature";
+import Speed from "@/common/Speed";
+import Distance from "@/common/Distance";
 
 import { FaFlag } from "react-icons/fa";
-
-import MQTT from "@/lib/MQTT";
 
 const styles = {
   img: {
@@ -13,10 +17,10 @@ const styles = {
     // float:         'left'
   },
   img_small: {
-    verticalAlign: "middle",
+    verticalAlign: "bottom",
     width: 48,
     height: 48,
-    float: "left",
+    //    float: "left",
   },
   imgleft: {
     verticalAlign: "middle",
@@ -26,13 +30,10 @@ const styles = {
   },
 };
 
-const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 const WeatherTab = ({ location }) => {
-  const Config = useConfig();
-  const device = location.device,
-    status_topic = `${Config.mqtt.weather}/${device}/status/`,
-    status_topic_length = status_topic.length;
+  const Config = useConfig(),
+    metric = Config.metric;
+  const weather = useWeather(location.device);
 
   const renderHourly = hourly => {
     return (
@@ -48,12 +49,18 @@ const WeatherTab = ({ location }) => {
           overflowY: "hidden",
         }}
       >
-        {hourly.map((o, i) => {
-          const d = new Date(o.time * 1000).toLocaleTimeString().replace(":00 ", " ");
-
-          if (i < 0 || i > 23) {
+        {hourly.map((data, i) => {
+          if (data.localTime === undefined) {
             return null;
           }
+          const t = "" + data.localTime,
+            timeStamp = parseInt(t.substr(0, t.length - 8), 10),
+            localTime =
+              timeStamp === 12
+                ? `12:00 PM`
+                : timeStamp > 12
+                ? `${timeStamp - 12}:00 PM`
+                : `${timeStamp}:00 AM`;
           return (
             <div
               key={i}
@@ -67,9 +74,11 @@ const WeatherTab = ({ location }) => {
                 textAlign: "center",
               }}
             >
-              <div style={{ fontSize: 16, fontWeight: "bold" }}>{d}</div>
-              <div style={{ textAlign: "center", fontSize: 24 }}>{o.temp}&deg;</div>
-              <div style={{ fontSize: "smaller" }}>Humidity: {o.humidity}%</div>
+              <div style={{ fontSize: 12 }}>{localTime}</div>
+              <img style={styles.img_small} alt={data.iconName} src={data.iconLink} />
+              <div style={{ fontWeight: "bold", fontSize: 20 }}>
+                <Temperature value={data.temperature} />
+              </div>
             </div>
           );
         })}
@@ -78,12 +87,13 @@ const WeatherTab = ({ location }) => {
   };
 
   const renderDaily = daily => {
+    let lastDay = "";
     return (
       <div
         onScroll={e => e.stopPropagation()}
         style={{
           position: "relative",
-          height: 120,
+          height: 180,
           width: "100%",
           textAlign: "left",
           whiteSpace: "nowrap",
@@ -91,133 +101,120 @@ const WeatherTab = ({ location }) => {
           overflowY: "hidden",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-          }}
-        >
-          {daily.map((o, i) => {
-            if (!o) {
-              return null;
-            }
-            const d = new Date(o.date * 1000),
-              weekday = dayOfWeek[d.getDay()],
-              day = d.getDate(),
-              month = d.getMonth(),
-              header = (
-                <div style={{ fontWeight: "bold" }}>
-                  {weekday} {month}/{day}
-                </div>
-              );
-
-            return (
-              <div
-                key={i}
-                style={{
-                  flex: 1,
-                  height: 180,
-                  margin: 2,
-                  padding: 5,
-                  border: "1px solid black",
-                  textAlign: "center",
-                  fontSize: 12,
-                }}
-              >
-                {header}
-                <img
-                  alt={o.icon}
-                  style={styles.img}
-                  src={`/img/Weather/icons/black/${o.icon}.svg`}
-                />
-                <div>{o.conditions}</div>
-                <div>High: {o.high_temperature} &deg;F</div>
-                <div>Low: {o.low_temperature} &deg;F</div>
+        {daily.map((o, i) => {
+          if (!o) {
+            return null;
+          }
+          const d = new Date(o.utcTime * 1000),
+            weekday = o.weekday,
+            day = d.getDate(),
+            month = d.getMonth(),
+            header = (
+              <div style={{ fontSize: 14, fontWeight: "bold" }}>
+                {weekday} {month}/{day}
               </div>
             );
-          })}
-        </div>
+
+          const marginLeft = i && lastDay !== o.weekday ? 20 : 0;
+          lastDay = o.weekday;
+          return (
+            <div
+              key={i}
+              style={{
+                marginLeft: marginLeft,
+                width: 140,
+                height: 160,
+                display: "inline-block",
+                marginRight: 2,
+                padding: 2,
+                border: "1px solid black",
+                textAlign: "center",
+              }}
+            >
+              {header}
+              <div>{o.daySegment}</div>
+              <div>
+                <img alt={o.iconName} style={styles.img_small} src={o.iconLink} />
+              </div>
+              <div style={{ fontWeight: "bold", fontSize: 20 }}>
+                <Temperature value={o.temperature} />
+              </div>
+              <div>{o.temperatureDesc}</div>
+            </div>
+          );
+        })}
       </div>
     );
   };
 
-  const [forecast, setForecast] = useState({});
-  const [now, setNow] = useState({});
-  const [display_city, setDisplayCity] = useState("");
-
-  useEffect(() => {
-    const onStateChange = (topic, newState) => {
-      const key = topic.substr(status_topic_length);
-      switch (key) {
-        case "forecast":
-          setForecast(newState);
-          break;
-        case "now":
-          setNow(newState);
-          break;
-        case "display_city":
-          setDisplayCity(newState);
-          break;
-        default:
-          throw new Error("invalid case", key);
-      }
-    };
-    MQTT.subscribe(status_topic + "forecast", onStateChange);
-    MQTT.subscribe(status_topic + "now", onStateChange);
-    MQTT.subscribe(status_topic + "display_city", onStateChange);
-    return () => {
-      MQTT.unsubscribe(status_topic + "forecast", onStateChange);
-      MQTT.unsubscribe(status_topic + "now", onStateChange);
-      MQTT.unsubscribe(status_topic + "display_city", onStateChange);
-    };
-  }, [status_topic, status_topic_length]);
-
   try {
-    const header = <h1>{display_city}</h1>,
-      daily = forecast.daily || [],
-      //      hourly = forecast.hourly,
-      sunrise = new Date(now.sunrise * 1000).toLocaleTimeString().replace(":00 ", " "),
-      sunset = new Date(now.sunset * 1000).toLocaleTimeString().replace(":00 ", " ");
-
-    if (!daily[0]) {
+    if (!weather.astronomy || !weather.forecast || !weather.hourly) {
       return null;
     }
+    const header = (
+        <>
+          <div style={{ fontSize: 24, fontWeight: "bold" }}>
+            <Clock /> Weather for {weather.now.city}, {weather.now.state}
+          </div>
+          <div>{weather.now.description}</div>
+        </>
+      ),
+      sunrise = new Date(weather.astronomy.sunrise * 1000)
+        .toLocaleTimeString()
+        .replace(":00 ", " "),
+      sunset = new Date(weather.astronomy.sunset * 1000).toLocaleTimeString().replace(":00 ", " ");
+
     return (
-      <div style={{ padding: 6 }}>
+      <div style={{ padding: 5 }}>
         {header}
-        <h2>Current Conditions</h2>
         <div
           style={{
-            fontSize: 30,
+            fontSize: 20,
             float: "right",
             marginTop: 5,
             marginBottom: 10,
           }}
         >
-          <div style={{ marginTop: 10, textAlign: "right" }}>
-            <FaFlag style={{ fontSize: 24 }} /> {now.wind_direction} {now.current_wind} MPH
+          <div>
+            <FaFlag style={{ fontSize: 16 }} /> {weather.now.windDesc}{" "}
+            <Speed value={weather.now.windSpeed} />
           </div>
-          <div style={{ fontSize: 14, textAlign: "right", marginTop: 0 }}>
+          <div style={{ fontSize: 12, textAlign: "left" }}>
             Sunrise: {sunrise} / Sunset: {sunset}
           </div>
-        </div>
-        <div style={{ fontSize: 30, float: "left", marginBottom: 10 }}>
-          <img alt={now.icon} style={styles.img} src={`/img/Weather/icons/black/${now.icon}.svg`} />
-          {now.current_temperature}&deg;F
-          <div style={{ fontSize: 14, textAlign: "right" }}>
-            High: {daily[0].high_temperature}&deg; / Low: {daily[0].low_temperature}&deg;
+          <div style={{ fontSize: 12, textAlign: "left" }}>
+            Visibility <Distance value={weather.now.visibility} units={false} />
           </div>
         </div>
-        <div style={{ clear: "both" }} />
 
-        <h2>Hourly Forecast</h2>
-        {renderHourly(forecast.hourly)}
-        <h2 style={{ marginTop: 2 }}>5 Day Forecast</h2>
-        {renderDaily(daily)}
+        <div style={{ fontSize: 16, float: "left" }}>
+          <span style={{ paddingTop: 10, fontSize: 42 }}>
+            <img alt={weather.now.iconName} style={styles.img} src={weather.now.iconLink} />
+            <Temperature value={weather.now.temperature} />
+          </span>
+          <div style={{ fontSize: 12, textAlign: "left" }}>
+            High <Temperature value={weather.now.highTemperature} /> /{" "}
+            <Temperature value={weather.now.lowTemperature} />
+          </div>
+          <div style={{ fontSize: 12, textAlign: "left" }}>
+            Humidity {weather.now.humidity}% / Dew Point
+            <Temperature value={weather.now.dewPoint} units={false} />
+            &deg;
+          </div>
+        </div>
+        <div style={{ clear: "both", marginBottom: 10 }} />
+        <h4>Hourly Forecast</h4>
+        {renderHourly(weather.hourly)}
+        <h5 style={{ marginTop: 2 }}>7 Day Forecast</h5>
+        {renderDaily(weather.forecast)}
       </div>
     );
   } catch (e) {
-    console.log("Weather render exception", e.message, e.stack);
+    console.log("exception weather", e.message, e.stack, weather);
+    //    console.log("Weather render exception", e.message, e.stack);
     return null;
   }
 };
+
+//
 export default WeatherTab;
