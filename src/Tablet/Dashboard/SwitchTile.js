@@ -20,7 +20,6 @@ import Tile from "./Tile";
 import { TiLightbulb } from "react-icons/ti";
 
 const SwitchTile = ({ hub, name }) => {
-  console.warn(hub);
   const thing = useSwitch(name, hub);
   //  const thing = useSwitch(name);
 
